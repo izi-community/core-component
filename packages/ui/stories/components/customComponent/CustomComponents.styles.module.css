@@ -1,0 +1,9 @@
+.component {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  will-change: scroll-position;
+  contain: strict;
+  -webkit-overflow-scrolling: touch;
+}
+

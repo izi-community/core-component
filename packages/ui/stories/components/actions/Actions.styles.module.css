@@ -1,0 +1,28 @@
+.left {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  z-index: 1;
+  left: 0;
+}
+
+.right {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  z-index: 1;
+  right: 0;
+}
+
+/*@media screen and (max-width: 768px) {*/
+/*  .right {*/
+/*    width: 70%;*/
+/*  }*/
+/*  .left {*/
+/*    width: 30%;*/
+/*  }*/
+/*}*/

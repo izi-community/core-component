@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "target": "es5",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "@emotion/react",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "incremental": true,
+    "baseUrl": "./",
+    "types": ["node"],
+    "typeRoots": ["@types/index.d.ts", "node_modules/@types", "additional.d.ts", "vite-env.d.ts",],
+  },
+  "include": ["."],
+  "exclude": ["node_modules"],
+  "moduleResolution": ["node_modules", "node"],
+  "ts-node": {
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  }
+}

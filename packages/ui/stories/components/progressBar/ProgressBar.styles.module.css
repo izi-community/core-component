@@ -1,0 +1,20 @@
+.wrapper {
+  position: relative;
+  background-color: #6a6a6a;
+  overflow: hidden;
+  height:4px;
+  border-radius: 4px;
+  z-index: 40;
+}
+
+.bar {
+  width: 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-color: #eae8e8;
+  height: 4px;
+  border-radius: 4px;
+}

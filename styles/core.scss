@@ -1,0 +1,1526 @@
+@use "sass:math";
+
+:root {
+  --vh: 1vh;
+}
+
+html.is-safari,
+html.is-safari body {
+  height: calc(var(--vh, 1vh) * 100);
+}
+
+@mixin resetStyle {
+  &:not(.header):not(.learn-more--id) {
+    font-size: inherit!important;
+    font-weight: inherit!important;
+    letter-spacing: inherit!important;
+    line-height: inherit!important;
+    text-align: left!important;
+    font-family: inherit!important;
+  }
+}
+
+@mixin resetStyleForLearnMore {
+  &:not(.header):not(.learn-more--id) {
+    font-size: inherit!important;
+    font-family: inherit!important;
+  }
+}
+
+.title-large {
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 0px;
+  line-height: 32px;
+}
+.title-medium {
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 0px;
+  line-height: 26px;
+}
+.title-small {
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 0px;
+  line-height: 24px;
+}
+.title-xsmall {
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 0em;
+  line-height: 20px;
+}
+.body-large {
+  font-size: 16px;
+  font-weight: normal;
+  letter-spacing: 0px;
+  line-height: 26px;
+}
+.body-large.bold {
+  font-weight: bold;
+}
+.body-medium {
+  font-size: 14px;
+  font-weight: normal;
+  letter-spacing: 0px;
+  line-height: 22px;
+}
+.body-medium.bold {
+  font-weight: bold;
+}
+.body-small {
+  font-size: 12px;
+  font-weight: normal;
+  letter-spacing: 0px;
+  line-height: 20px;
+}
+.body-small.bold {
+  font-weight: bold;
+}
+.body-xsmall {
+  font-size: 10px;
+  font-weight: normal;
+  letter-spacing: 0px;
+  line-height: 16px;
+}
+
+
+@function adjustPercent($base, $operator, $percent) {
+  @if $operator == '+' {
+    @return ($base + math.div($base * $percent, 100));
+  } @else if $operator == '-' {
+    @return $base - math.div($base * $percent, 100);
+  } @else {
+    @return $base;
+  }
+}
+
+@function adjustPercentHeight($base) {
+  @return $base + 8.33333
+}
+
+[story-mode=mobile] {
+  .title-large {
+    & *:not(.learn-more--id) {
+      @include resetStyle;
+    }
+    $titleLarge: 28px;
+    font-size: $titleLarge;
+    font-weight: 700;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(28px);
+
+    @media screen and (max-width: 375px) {
+      $base: adjustPercent($titleLarge, '-', 16.67);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-width: 240px) {
+      $base: adjustPercent($titleLarge, '-', 33.33);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+  .title-medium {
+    &  * {
+      @include resetStyle;
+    }
+    $titleMedium: 22px;
+    font-size: $titleMedium;
+    font-weight: 700;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(22px);
+
+    @media screen and (max-width: 375px) {
+      $base: adjustPercent($titleMedium, '-', 16.67);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-width: 240px) {
+      $base: adjustPercent($titleMedium, '-', 33.33);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+  .title-small {
+    $titleSmall: 17px;
+    font-size: $titleSmall;
+    font-weight: 700;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(17px);
+
+    @media screen and (max-width: 375px) {
+      $base: adjustPercent($titleSmall, '-', 16.67);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-width: 240px) {
+      $base: adjustPercent($titleSmall, '-', 33.33);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+  .title-xsmall {
+    &  * {
+      @include resetStyle;
+    }
+    $titleXSmall: 15px;
+    font-size: $titleXSmall;
+    font-weight: bold;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(15px);
+
+    @media screen and (max-width: 375px) {
+      $base: adjustPercent($titleXSmall, '-', 16.67);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-width: 240px) {
+      $base: adjustPercent($titleXSmall, '-', 33.33);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+
+
+  .blog-content,
+  .body-large {
+    &  * {
+      @include resetStyleForLearnMore;
+    }
+    $bodyLarge: 22px;
+    font-size: $bodyLarge;
+    font-weight: normal;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(22px);
+
+    @media screen and (max-width: 375px) {
+      $base: adjustPercent($bodyLarge, '-', 16.67);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-width: 240px) {
+      $base: adjustPercent($bodyLarge, '-', 33.33);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+  .body-large.bold {
+    font-weight: bold;
+  }
+  .body-medium {
+    &  * {
+      @include resetStyle;
+    }
+    $bodyMedium: 18px;
+    font-size: $bodyMedium;
+    font-weight: normal;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(18px);
+
+    @media screen and (max-width: 375px) {
+      $base: adjustPercent($bodyMedium, '-', 16.67);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-width: 240px) {
+      $base: adjustPercent($bodyMedium, '-', 33.33);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+  .body-medium.bold {
+    font-weight: bold;
+  }
+  .body-small {
+    &  * {
+      @include resetStyle;
+    }
+    $bodySmall: 14px;
+    font-size: $bodySmall;
+    font-weight: normal;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(14px);
+
+    @media screen and (max-width: 375px) {
+      $base: adjustPercent($bodySmall, '-', 16.67);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-width: 240px) {
+      $base: adjustPercent($bodySmall, '-', 33.33);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+  .body-small.bold {
+    font-weight: bold;
+  }
+  .body-xsmall {
+    &  * {
+      @include resetStyle;
+    }
+    $bodyXSmall: 12px;
+    font-size: $bodyXSmall;
+    font-weight: normal;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(12px);
+
+    @media screen and (max-width: 375px) {
+      $base: adjustPercent($bodyXSmall, '-', 16.67);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-width: 240px) {
+      $base: adjustPercent($bodyXSmall, '-', 33.33);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+}
+
+[story-mode=desktop] {
+  #wrapper-play-id-child {
+    border-radius: 24px;
+    overflow: hidden;
+  }
+  .title-large {
+    &  * {
+      @include resetStyle;
+    }
+    font-size: 40px;
+    font-weight: bold;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(40px);
+
+    @media screen and (max-height: 1245px) {
+      $base: adjustPercent(40px, '+', 12.5);
+      &  * {
+        @include resetStyle;
+      }
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (min-height: 1246px) {
+      $base: adjustPercent(40px, '-', 10);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 1105px) {
+      $base: adjustPercent(40px, '-', 26.66);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+    @media screen and (max-height: 1005px) {
+      $base: adjustPercent(40px, '-', 15.625);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 887px) {
+      $base: adjustPercent(40px, '-', 29.6875);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 764px) {
+      $base: adjustPercent(40px, '-', 43.75);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+  .title-medium {
+    &  * {
+      @include resetStyle;
+    }
+    font-size: 30px;
+    font-weight: bold;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(30px);
+
+    @media screen and (max-height: 1245px) {
+      $base: adjustPercent(30px, '+', 12.5);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (min-height: 1246px) {
+      $base: adjustPercent(30px, '-', 10);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 1105px) {
+      $base: adjustPercent(30px, '-', 26.66);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 1005px) {
+      $base: adjustPercent(30px, '-', 15.625);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 887px) {
+      $base: adjustPercent(30px, '-', 29.6875);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 764px) {
+      $base: adjustPercent(30px, '-', 43.75);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+  .title-small {
+    &  * {
+      @include resetStyle;
+    }
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(20px);
+    @media screen and (max-height: 1245px) {
+      $base: adjustPercent(20px, '+', 12.5);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (min-height: 1246px) {
+      $base: adjustPercent(20px, '-', 10);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 1105px) {
+      $base: adjustPercent(20px, '-', 26.66);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 1005px) {
+      $base: adjustPercent(20px, '-', 15.625);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 887px) {
+      $base: adjustPercent(20px, '-', 29.6875);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 764px) {
+      $base: adjustPercent(20px, '-', 43.75);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+  .title-xsmall {
+    &  * {
+      @include resetStyle;
+    }
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(16px);
+
+    @media screen and (max-height: 1245px) {
+      $base: adjustPercent(16px, '+', 12.5);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (min-height: 1246px) {
+      $base: adjustPercent(16px, '-', 10);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 1105px) {
+      $base: adjustPercent(16px, '-', 26.66);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 1005px) {
+      $base: adjustPercent(16px, '-', 15.625);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 887px) {
+      $base: adjustPercent(16px, '-', 29.6875);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 764px) {
+      $base: adjustPercent(16px, '-', 43.75);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+
+
+  .blog-content,
+  .body-large {
+    &  * {
+      @include resetStyle;
+    }
+    $bodyLarge: 30px;
+    font-size: $bodyLarge;
+    font-weight: normal;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(30px);
+
+    @media screen and (max-height: 1245px) {
+      $base: adjustPercent($bodyLarge, '+', 12.5);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (min-height: 1246px) {
+      $base: adjustPercent($bodyLarge, '-', 10);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 1105px) {
+      $base: adjustPercent($bodyLarge, '-', 26.66);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 1005px) {
+      $base: adjustPercent($bodyLarge, '-', 15.625);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 887px) {
+      $base: adjustPercent($bodyLarge, '-', 29.6875);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 764px) {
+      $base: adjustPercent($bodyLarge, '-', 43.75);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+  .body-large.bold {
+    font-weight: bold;
+  }
+  .body-medium {
+    &  * {
+      @include resetStyle;
+    }
+    $bodyMedium: 20px;
+    font-size: $bodyMedium;
+    font-weight: normal;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(20px);
+
+    @media screen and (max-height: 1245px) {
+      $base: adjustPercent($bodyMedium, '+', 12.5);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (min-height: 1246px) {
+      $base: adjustPercent($bodyMedium, '-', 10);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+
+    @media screen and (max-height: 1105px) {
+      $base: adjustPercent($bodyMedium, '-', 26.66);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 1005px) {
+      $base: adjustPercent($bodyMedium, '-', 15.625);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 887px) {
+      $base: adjustPercent($bodyMedium, '-', 29.6875);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 764px) {
+      $base: adjustPercent($bodyMedium, '-', 43.75);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+  .body-medium.bold {
+    font-weight: bold;
+  }
+  .body-small {
+    &  * {
+      @include resetStyle;
+    }
+    $bodySmall: 18px;
+    font-size: $bodySmall;
+    font-weight: normal;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(18px);
+
+    @media screen and (max-height: 1245px) {
+      $base: adjustPercent($bodySmall, '+', 12.5);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (min-height: 1246px) {
+      $base: adjustPercent($bodySmall, '-', 10);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 1105px) {
+      $base: adjustPercent($bodySmall, '-', 26.66);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+
+    @media screen and (max-height: 1005px) {
+      $base: adjustPercent($bodySmall, '-', 15.625);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 887px) {
+      $base: adjustPercent($bodySmall, '-', 29.6875);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 764px) {
+      $base: adjustPercent($bodySmall, '-', 43.75);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+  .body-small.bold {
+    font-weight: bold;
+  }
+  .body-xsmall {
+    &  * {
+      @include resetStyle;
+    }
+    $bodyXSmall: 14px;
+    font-size: $bodyXSmall;
+    font-weight: normal;
+    letter-spacing: initial;
+    line-height: adjustPercentHeight(14px);
+
+    @media screen and (max-height: 1245px) {
+      $base: adjustPercent($bodyXSmall, '+', 12.5);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (min-height: 1246px) {
+      $base: adjustPercent($bodyXSmall, '-', 10);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+    @media screen and (max-height: 1105px) {
+      $base: adjustPercent($bodyXSmall, '-', 26.66);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+    @media screen and (max-height: 1005px) {
+      $base: adjustPercent($bodyXSmall, '-', 15.625);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 887px) {
+      $base: adjustPercent($bodyXSmall, '-', 29.6875);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+
+    @media screen and (max-height: 764px) {
+      $base: adjustPercent($bodyXSmall, '-', 43.75);
+      font-size: $base;
+      line-height: adjustPercentHeight($base);
+    }
+  }
+}
+
+.primary-bg-1 {
+  background: linear-gradient(
+                  168.48deg,
+                  rgba(207, 221, 255, 1) 0%,
+                  rgba(255, 237, 237, 1) 82.99999833106995%
+  )
+}
+
+.text-inherit {
+  text-align:inherit;
+}
+
+.lineClamp {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+
+
+.video-container {
+  width: 100%;
+  position: relative;
+  padding-bottom: 55.25%;
+  height: 0;
+  overflow: hidden;
+
+  @media screen and (max-width: 768px) {
+    padding-bottom: 56.25%;
+  }
+}
+
+.video-container iframe,
+.video-container object,
+.video-container embed {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: transparent;
+  user-select: auto;
+  pointer-events: auto;
+}
+
+
+pre {
+  -webkit-overflow-scrolling: auto!important;
+  font-feature-settings: "ss01" on;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;
+  font-weight: 400;
+  height: 100%;
+  letter-spacing: -.02em;
+
+  white-space: pre-wrap;       /* Since CSS 2.1 */
+  white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+  white-space: -pre-wrap;      /* Opera 4-6 */
+  white-space: -o-pre-wrap;    /* Opera 7 */
+  word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+
+
+.player-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* Player ratio: 100 / (1280 / 720) */
+}
+
+.react-player {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+
+[data-rsbs-backdrop], [data-rsbs-overlay], [data-rsbs-root]:after {
+  z-index: 100!important;
+}
+
+
+.underline {
+  text-decoration: underline;
+}
+
+.test-content {
+  ol {
+    padding-left: 32px;
+
+    li {
+      list-style-type: decimal;
+    }
+  }
+
+  ul {
+    padding-left: 32px;
+
+    li {
+      list-style-type: disc;
+    }
+  }
+
+  img {
+    width: 100% !important;
+    height: auto;
+    margin: 16px auto!important;
+    display: block;
+    border-radius: 8px;
+
+    &.small {
+      width: 100% !important;
+    }
+
+    @media screen and (max-width: 768px) {
+      width: 100% !important;
+    }
+  }
+
+
+  &.blog-content {
+
+    table {
+      font-size: inherit;
+      font: 100%;
+      border-collapse: collapse;
+      border-spacing: 0;
+    }
+    pre,
+    code,
+    kbd,
+    samp,
+    tt {
+      font-family: monospace;
+      *font-size: 108%;
+      line-height: 100%;
+    }
+
+    /* YUI Base css http://developer.yahoo.com/yui/base/ */
+
+    h1 {
+      /*18px via YUI Fonts CSS foundation*/
+      font-size: 138.5%;
+    }
+
+    h2 {
+      /*16px via YUI Fonts CSS foundation*/
+      font-size: 123.1%;
+    }
+
+    h3 {
+      /*14px via YUI Fonts CSS foundation*/
+      font-size: 108%;
+    }
+
+    /* margin and padding values are reset for all these elements
+   * you could remove from there elements you do not used in your documents, but I don't think it'd worth it
+   */
+
+    body,
+    p,
+    dl,
+    dt,
+    dd,
+    ul,
+    ol,
+    li,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    pre,
+    code,
+    form,
+    fieldset,
+    legend,
+    input,
+    button,
+    textarea,
+    blockquote,
+    th,
+    td {
+      margin: 0;
+      padding: 0;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    blockquote,
+    ul,
+    ol,
+    dl {
+      /* top & bottom margin based on font size */
+      margin: 1em 0;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    strong,
+    th,
+    dt,
+    b {
+      /*bringing boldness back to headers and the strong element*/
+      font-weight: bold;
+    }
+
+    abbr,
+    acronym {
+      cursor: default;
+      border: none;
+      font-variant: normal;
+    }
+
+    em,
+    blockquote,
+    q,
+    em,
+    cite,
+    dfn,
+    i,
+    cite,
+    var,
+    address {
+      /*bringing italics back */
+      font-style: italic;
+    }
+
+    ol,
+    ul,
+    dl {
+      /*bringing lists on to the page with breathing room */
+      margin-left: 2em;
+    }
+
+    ol li {
+      /*giving OL's LIs generated numbers*/
+      list-style: decimal outside;
+    }
+
+    ul li {
+      /*giving UL's LIs generated disc markers*/
+      list-style: disc outside;
+    }
+
+    dl dd {
+      /*giving UL's LIs generated numbers*/
+      margin-left: 1em;
+    }
+
+    th,
+    td {
+      /*borders and padding to make the table readable*/
+      border: 1px solid #000;
+      padding: 0.5em;
+    }
+
+    /* all th should be centered unless they are in tbody (table body) */
+
+    th {
+      /*distinguishing table headers from data cells*/
+      text-align: center;
+    }
+
+    tbody th {
+      text-align: left;
+    }
+
+    /* caption and summary are very important for tabular data but because caption is nearly impossible to style across browsers many authors do not use it or use display:none to "hide" it (which is almost the same as not using it).
+   * so to prevent such workaround, I am positioning this element off-screen
+   */
+
+    caption {
+      position: absolute;
+      left: -999em;
+    }
+
+    /* this is to prevent border from showing around fieldsets and images (i.e., images inside anchors)
+   */
+
+    fieldset,
+    img {
+      border: 0;
+    }
+
+    /* to prevent a gap from showing below images in some browsers
+   */
+
+    img {
+      vertical-align: top;
+    }
+
+    /* color is to make that element stands out (see color set via body)
+   * padding is used so Internet Explorer does not cut-off descenders in letters like p, g, etc.)
+   */
+
+    legend {
+      color: #000;
+      padding-bottom: 0.5em;
+    }
+
+    /* See Eric Meyer's article about Fixed Monospace Sizing
+   * http://meyerweb.com/eric/thoughts/2010/02/12/fixed-monospace-sizing/
+   */
+
+    code {
+      color: #06f;
+    }
+
+    code,
+    pre {
+      font-family: 'Courier New', monospace, serif;
+      font-size: 1em;
+    }
+
+    /* to prevent some browsers from inserting quotes on "q" and "p" ("p" in blockquotes) */
+
+    blockquote p:before,
+    blockquote p:after,
+    q:before,
+    q:after {
+      content: '';
+    }
+
+    blockquote {
+      background: #fafafa;
+      border-left: 8px solid #ccc;
+      margin: 1.5em 10px;
+      padding: 16px 10px;
+      border-radius: 0 16px 16px 0;
+      quotes: '\201C''\201D''\2018''\2019';
+    }
+
+    a {
+      font-weight: bold !important;
+    }
+
+    a:hover {
+      color: var(--primary-color) !important;
+    }
+
+    blockquote:before {
+      color: #ccc;
+      content: open-quote;
+      font-size: 4em;
+      line-height: 0.1em;
+      margin-right: 0.25em;
+      vertical-align: -0.4em;
+    }
+
+    blockquote p {
+      display: inline;
+    }
+
+    ins {
+      text-decoration: none;
+      border-bottom: 3px double #333;
+    }
+
+    del {
+      text-decoration: line-through;
+    }
+
+    /* we use margin for hr for the same reason we do for table */
+
+    hr {
+      margin-right: 30px;
+      margin-left: 30px;
+      border-style: inset;
+      border-width: 1px;
+    }
+
+    /* line height helps to set the vertical alignment of radio buttons and check boxes (remember to group these in fieldsets)
+   */
+
+    fieldset {
+      line-height: 1;
+    }
+
+    /* vertical alignment of checkboxes (a different value is served to IE 7)
+   */
+
+    input[type='checkbox'] {
+      vertical-align: middle;
+      *vertical-align: middle;
+    }
+
+    /* vertical alignment of radio buttons */
+
+    input[type='radio'] {
+      vertical-align: middle;
+    }
+
+    /* vertical alignment of input fields for IE 6 */
+
+    input {
+      _vertical-align: middle;
+    }
+
+    /* a specific font-size is set for these elements */
+
+    input,
+    button,
+    textarea,
+    select,
+    optgroup,
+    option {
+      font-size: 100%;
+    }
+
+    /* this is to fix IE 6 and 7 which create extra right/left padding on buttons
+   * IMPORTANT: because IE 6 does not understand the first selector below, you need to apply the class "inputButton" to all input of type="button" in your documents
+   * the first declaration is for IE 6 and 7, the second one for IE 6 only, the third one is for all browsers.
+   */
+
+    button,
+    input[type='submit'],
+    input[type='reset'],
+    input[type='button'],
+    .inputButton {
+      *overflow: visible;
+      _width: 0;
+      padding: 0.2em 0.4em;
+    }
+
+    /* styling for links and visited links as well as for links in a hovered, focus and active state
+   * make sure to keep these rules in that order, with :active being last
+   * a:focus and :focus are used to help keyboard users, you may change their styling, but make sure to give users a visual clue of the element's state.
+   * outline:none used with the pseudo-class :active is to avoid the sticky outline when a user clicks on a link, but choose to not follow it
+   * note that the last rule does not do anything in IE as this browser does not support "outline" (besides, it treats :active and :focus the same)
+   */
+
+    a:link,
+    a:visited {
+      color: #000;
+    }
+
+    a:focus,
+    :focus {
+      outline: none;
+    }
+
+    a:active,
+    input:active,
+    select:active,
+    textarea:active {
+      outline: none;
+    }
+
+    /*
+   * End of base/reset
+   */
+
+    /*
+   * slightly enhanced, universal clearfix hack
+   */
+
+    .grouped:after {
+      visibility: hidden;
+      display: block;
+      font-size: 0;
+      content: ' ';
+      clear: both;
+      height: 0;
+    }
+
+    .grouped {
+      display: inline-block;
+    }
+
+    /* start commented backslash hack \*/
+
+    * html .grouped {
+      height: 1%;
+    }
+
+    .grouped {
+      display: block;
+    }
+
+    /* close commented backslash hack */
+
+    /*
+   * End clearfix hack
+   */
+
+    /*
+   * Awesome Buttons
+   */
+
+    /*
+      awesome buttons are based on a blog post by ZERB
+      Read there blog post for more information:
+      "Super awesome Buttons with CSS3 and RGBA":http://www.zurb.com/article/266/super-awesome-buttons-with-css3-and-rgba
+      this buttons are even more awesome, as the need only one color for all three states,
+      and have an super awesome onclick state
+  */
+
+    /* set an awesome color for the buttons, feel free to add new colors like an .awesome.green or .awesome.secondary */
+
+    .awesome {
+      background-color: #111 !important;
+      color: #fff !important;
+    }
+
+    /* the awesome size gets set here. Feel free to add new sizes, like .awesome.small or .small.large */
+
+    .awesome {
+      padding: 5px 10px 6px !important;
+      font-size: 13px !important;
+    }
+
+    .awesome:active {
+      padding: 6px 10px 5px !important;
+    }
+
+    /* Touch the rest at your onw risk. */
+
+    .awesome {
+      border: 0 !important;
+      cursor: pointer !important;
+      font-style: normal !important;
+      font-weight: bold !important;
+      font: inherit !important;
+      line-height: 1 !important;
+      position: relative !important;
+      text-align: center !important;
+      text-decoration: none !important;
+
+      /* vertical margin is the opposite of button's awesomeness */
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+
+      /* not all browser support these, but who cares? */
+      text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.25), -2px 0 1px rgba(0, 0, 0, 0.25) !important;
+
+      border-radius: 5px !important;
+      -moz-border-radius: 5px !important;
+      -webkit-border-radius: 5px !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+      -moz-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+      -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+
+      /* who needs images these days? */
+      background-image: -moz-linear-gradient(
+                      top,
+                      rgba(255, 255, 255, 0.2),
+                      rgba(150, 150, 150, 0.2),
+                      rgba(0, 0, 0, 0)
+      ) !important;
+      background-image: -webkit-gradient(
+                      linear,
+                      0% 0%,
+                      0% 100%,
+                      from(rgba(255, 255, 255, 0.2)),
+                      color-stop(0.5, rgba(150, 150, 150, 0.2)),
+                      to(rgba(0, 0, 0, 0))
+      ) !important;
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#30ffffff,endColorstr=#10000000) progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=135,strength=2);
+
+      /* cross browser inline block hack
+       see http://blog.mozilla.com/webdev/2009/02/20/cross-browser-inline-block/ */
+      display: -moz-inline-stack;
+      display: inline-block;
+      vertical-align: middle !important;
+      *display: inline !important;
+      position: relative;
+
+      /* IE luv */
+      zoom: 1;
+
+      /* disable text selection (Firefox only) */
+      -moz-user-select: none;
+    }
+
+    /* OPERA only
+     if there is no border set, Opera shows a transparent background-color if border-radius is set. */
+    @media all and (-webkit-min-device-pixel-ratio: 10000), not all and (-webkit-min-device-pixel-ratio: 0) {
+      input.awesome {
+        border: 1px solid RGBa(0, 0, 0, 0) !important;
+      }
+    }
+
+    /* hide selection background color */
+
+    .awesome::selection {
+      background: transparent;
+    }
+
+    .awesome {
+      outline: 0; /* remove dotted line, works for links only */
+    }
+
+    .awesome::-moz-focus-inner {
+      border: none; /* remove dotted lines for buttons */
+    }
+
+    /* Safari doesn't support inset box shadow, so we better remove it */
+    @media screen and (-webkit-min-device-pixel-ratio: 0) {
+      .awesome:active {
+        -webkit-box-shadow: none;
+      }
+    }
+
+    /*
+   * End of Awesome Buttons
+   */
+
+    /*
+   * Styling flash messages in Rails
+   */
+
+    .notice,
+    .alert {
+      margin-top: 0px;
+      padding: 5px;
+    }
+
+    .notice {
+      border: solid 1px #99cc99;
+      background-color: #e2f9e3;
+      color: #006600;
+    }
+
+    .alert {
+      border: 1px solid #cc0000;
+      background-color: #eeaaaa;
+      color: #cc0000;
+    }
+
+    /*
+   * End styling flash messages in Rails
+   */
+
+    /*
+   * Default forms Styling
+   */
+
+    label {
+      width: 120px;
+      display: inline-block;
+    }
+
+    input,
+    textarea {
+      font-size: 110%;
+    }
+
+    select {
+      font-size: 120%;
+    }
+
+    input.bool,
+    input[type='checkbox'] {
+      margin-right: 10px;
+    }
+
+    input[type='text']:focus,
+    input[type='password']:focus,
+    input[type='file']:focus,
+    input[type='email']:focus,
+    textarea:focus,
+    select:focus {
+      border: 2px solid #2c2c2c;
+    }
+
+    input[type='text'],
+    input[type='password'],
+    input[type='file'],
+    input[type='email'],
+    textarea,
+    select {
+      width: 300px;
+      -moz-border-radius: 5px;
+      -webkit-border-radius: 5px;
+      border-radius: 5px;
+      border: 2px solid #d2d1cf;
+      color: #555555;
+      outline: 0 none;
+      padding: 5px;
+    }
+
+    form .input label {
+      vertical-align: middle;
+    }
+
+    form .input.text label {
+      vertical-align: top;
+    }
+
+    /*
+   * End default forms Styling
+   */
+
+    /*
+   * Styling errors Rails
+   */
+
+    .field_with_errors input[type='text'],
+    .field_with_errors input[type='password'],
+    .field_with_errors input[type='file'],
+    .field_with_errors input[type='email'],
+    .field_with_errors textarea,
+    .field_with_errors select {
+      border: 2px solid #e0a7a7;
+    }
+
+    .field_with_errors input[type='text']:focus,
+    .field_with_errors input[type='password']:focus,
+    .field_with_errors input[type='file']:focus,
+    .field_with_errors input[type='email']:focus,
+    .field_with_errors textarea:focus {
+      border: 2px solid #b22222;
+    }
+
+    .field_with_errors .error {
+      padding-left: 10px;
+    }
+
+    /*
+   * End styling errors in Rails
+   */
+
+    /*
+   * Additional styles from paul irish html-boilerplate
+   * http://github.com/paulirish/html5-boilerplate/blob/master/css/style.css
+   */
+
+    /*
+   * print styles
+   * inlined to avoid required HTTP connection www.phpied.com/delay-loading-your-print-css/
+   */
+    @media print {
+      * {
+        background: transparent !important;
+        color: #444 !important;
+        text-shadow: none !important;
+      }
+
+      a,
+      a:visited {
+        color: #444 !important;
+        text-decoration: underline;
+      }
+
+      a:after {
+        content: ' (' attr(href) ')';
+      }
+
+      abbr:after {
+        content: ' (' attr(title) ')';
+      }
+
+      .ir a:after {
+        content: '';
+      }
+
+      /* Don't show links for images */
+      pre,
+      blockquote {
+        border: 1px solid #999;
+        page-break-inside: avoid;
+      }
+
+      thead {
+        display: table-header-group;
+      }
+
+      /* css-discuss.incutio.com/wiki/Printing_Tables */
+      tr,
+      img {
+        page-break-inside: avoid;
+      }
+
+      @page {
+        margin: 0.5cm;
+      }
+
+      p,
+      h2,
+      h3 {
+        orphans: 3;
+        widows: 3;
+      }
+
+      h2,
+      h3 {
+        page-break-after: avoid;
+      }
+    }
+
+    /*
+   * Media queries for responsive design
+   */
+
+    @media all and (orientation: portrait) {
+      /* Style adjustments for portrait mode goes here */
+    }
+
+    @media all and (orientation: landscape) {
+      /* Style adjustments for landscape mode goes here */
+    }
+
+    /* Grade-A Mobile Browsers (Opera Mobile, iPhone Safari, Android Chrome)
+     Consider this: www.cloudfour.com/css-media-query-for-mobile-is-fools-gold/ */
+    @media screen and (max-device-width: 480px) {
+      .blockquote {
+        font-size: 14px;
+      }
+
+      /* Uncomment if you don't want iOS and WinMobile to mobile-optimize the text for you
+       j.mp/textsizeadjust
+    html { -webkit-text-size-adjust:none; -ms-text-size-adjust:none; } */
+    }
+  }
+}
+
+
+[class*=" z-"] {
+  -webkit-transform: translateZ(20px);
+  position: relative;
+}
+
+.learn-more--id {
+  text-decoration: none!important;
+  font-weight: bold!important;
+  color: rgb(10 10 10) !important;
+  position: relative;
+  display: inline-block;
+  &:after {
+    content: "";
+    position: absolute;
+    bottom: 5px;
+    height: 5px;
+    left: 0;
+    right: 0;
+    z-index: -1;
+    width: 100%;
+    background: var(--colorPrimary);
+    opacity: 0.8;
+  }
+}
