@@ -1,11 +1,5 @@
 {
   "name": "@trainizi/core",
-  "license": "MIT",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "main": "./index.tsx",
-  "types": "./index.tsx",
   "dependencies": {
     "@ant-design/icons": "^5.3.0",
     "@babel/runtime": "^7.18.0",
@@ -166,19 +160,5 @@
     "vite-plugin-style-import": "^2.0.0",
     "vite-plugin-svgr": "^4.2.0",
     "vite-tsconfig-paths": "^4.0.7"
-  },
-  "engines": {
-    "node": ">=17.0.0 <20.0.0"
-  },
-  "trustedDependencies": [
-    "sharp"
-  ],
-  "resolutions": {
-    "string-width": "4.2.3",
-    "wide-align": "*"
-  },
-  "overrides": {
-    "string-width": "4.2.3",
-    "wide-align": "*"
   }
 }
