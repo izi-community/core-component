@@ -1,11 +1,7 @@
 {
   "name": "@trainizi/core",
   "license": "MIT",
-  "private": true,
-  "version": "0.0.1",
-  "type": "module",
-  "main": "./index.tsx",
-  "types": "./index.tsx",
+  "version": "0.0.2",
   "dependencies": {
     "@ant-design/icons": "^5.3.0",
     "@babel/runtime": "^7.18.0",
