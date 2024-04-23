@@ -38,6 +38,30 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
     threshold: 0
   });
 
+  const [orientation, setOrientation] = useState<string>('');
+
+  const handleReady = () => {
+    // Ensure the player is loaded and the underlying video element is accessible
+    const player = refVideo.current;
+    if (player && player.getInternalPlayer()) {
+      const videoElement: HTMLVideoElement = player.getInternalPlayer() as HTMLVideoElement;
+      const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
+
+      let _o = ''
+      if (aspectRatio > 1) {
+        _o = 'landscape';
+      } else if (aspectRatio < 1) {
+        _o  = 'vertical';
+      } else {
+        _o = 'square';
+      }
+
+      if(orientation !== _o) {
+        setOrientation(_o)
+      }
+    }
+  };
+
   useEffect(() => {
     if(inView) {
       changeLocalPause(false)
@@ -53,7 +77,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
       <div
         css={css`
             video {
-                object-fit: cover;
+                object-fit: ${orientation === 'landscape' ? 'contain' : 'cover'};
             }
 
             width: 100%;
@@ -79,6 +103,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                 console.log('onStart');
               }}
               onReady={() => {
+                handleReady()
                 setShowLoader(true)
                 changeLocalPause(false)
               }}
