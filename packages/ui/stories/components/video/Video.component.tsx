@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { IStoryComponentProps } from '../../types';
 import * as hooks from '../../hooks';
-import VideoYoutube from "../video/video-youtube";
+import VideoYoutube from "@trainizi/core/packages/ui/stories/components/video/video-youtube";
 
 const key = 'RSIsMute';
 const WINDOW: any = typeof window === 'undefined' ? {} : window;

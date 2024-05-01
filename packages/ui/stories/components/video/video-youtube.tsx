@@ -4,7 +4,7 @@ import {css} from "@emotion/react";
 import useWindowsResize from "../../../../hook/use-windows-resize";
 import {Slider} from "antd";
 import Button from "../../../button";
-import {PauseOutlined, PlayCircleOutlined} from "@ant-design/icons";
+import {PauseOutlined, PlayCircleOutlined,FullscreenOutlined} from "@ant-design/icons";
 import {SoundIcon} from "../soundIcon";
 import {useEffect, useRef, useState} from "react";
 import { useInView } from 'react-intersection-observer';
@@ -34,6 +34,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   const [isLocalPaused,  changeLocalPause] = useState(true)
   const [showLoader, setShowLoader] = useState(false);
   const [isOnUnstarted, changeIsOnUnstarted] = useState(false);
+  const [isShowingControls, showingControls] = useState(false);
   const { ref, inView } = useInView({
     threshold: 0
   });
@@ -70,6 +71,33 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
     }
   }, [inView]);
 
+  useEffect(() => {
+    document.addEventListener('fullscreenchange', (event) => {
+      console.log("fullscreenchange")
+      if (!document.fullscreenElement) {
+       showingControls(false)
+        let elem = refVideo.current?.player?.player?.player
+        // if(['video', 'VIDEO_MEDIA'].includes(media?.type ?? '')) {
+        //   elem = elem?.g;
+        // }
+
+        if (elem) {
+          elem.controls = false;
+          try {
+            elem.style.objectFit = orientation === 'landscape' ? 'contain' : 'cover'
+          } catch {
+
+          }
+        }
+      }
+    });
+    return () => {
+      document.removeEventListener('fullscreenchange', (event) => {
+
+      });
+    }
+  }, [orientation, refVideo]);
+
   return (
     <div
       ref={ref}
@@ -84,14 +112,14 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
             height: 100%;
 
             iframe {
-                pointer-events: none;
+                pointer-events: ${isShowingControls ? 'auto' : 'none'};
             }
         `}
         className={`${['video', 'VIDEO_MEDIA'].includes(media?.type ?? '') ? 'video-container' : 'player-wrappers'} `}>
         {
           inView && (
             <ReactPlayer
-              className={`${!['video', 'VIDEO_MEDIA'].includes(media?.type ?? '') ? 'w-full h-full' : 'react-player'} pointer-events-none`}
+              className={`${!['video', 'VIDEO_MEDIA'].includes(media?.type ?? '') ? 'w-full h-full' : 'react-player'}  player-custom`}
               onPause={() => {
                 console.log('onPause');
               }}
@@ -126,10 +154,15 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               height="100%"
               config={{
                 youtube: {
-                  embedOptions: {},
+                  embedOptions: {
+                    allowFullScreen: 'allowfullscreen',
+                    allow:"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share;fullscreen;"
+                  },
                   playerVars: {
                     showinfo: 1,
-                    playsinline: 1
+                    playsinline: 1,
+                    allowFullScreen: 'allowfullscreen',
+                    allow:"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share;fullscreen;"
                   },
                   onUnstarted: () => {
                     console.log("onUnstarted")
@@ -137,15 +170,17 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                     changeLocalPause(true)
                   }
                 },
-                file: {},
+                file: {
+                },
               }}
               progressInterval={100}
               onProgress={(e: any) => {
                 setShowLoader(false)
                 changeProgress(e?.played ?? 0);
               }}
+
               muted={isLocalMuted}
-              controls={false}
+              controls={isShowingControls}
               loop={false}
               playing={!isLocalPaused}
               onClickPreview={() => {
@@ -186,88 +221,137 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
           </div>
         )
       }
-      <div
-        className={`flex z-20 bg-neutral-100 bg-opacity-20 rounded-lg items-center controls absolute left-0 right-0 bottom-4 px-4 lg:py-2 py-0.5 mx-4`}>
-        <Button
-          csss={css`
-              width: 36px;
-              height: 36px;
-              background: rgba(255, 255, 255, 0.2);
-              @media screen and (max-width: 768px) {
-                  width: 30px;
-                  height: 30px;
-              }
-          `}
-          icon={isLocalPaused ? <PlayCircleOutlined style={{fontSize: 16}} rev={undefined}/> :
-            <PauseOutlined style={{fontSize: 16}} rev={undefined}/>}
-          onClick={() => {
-            // props?.onPause?.(!isLocalPaused);
-            props?.effectSounds?.select?.();
-            changeLocalPause(!isLocalPaused)
-          }}
-        >
-        </Button>
-        <Slider
-          className='w-full mx-4 flex-1'
-          max={100}
-          min={0}
-          handleStyle={{
-            height: 8
-          }}
-          onChange={(e: any) => {
-            refVideo?.current?.seekTo?.(e * 0.01);
-            handleSliderInteractionStart();
-            changeProgress(e * 0.01);
-          }}
-          onChangeComplete={() => {
-            handleSliderInteractionEnd()
-          }}
-          css={css`
+      {
+        !isShowingControls && (
+          <div
+            className={`flex z-20 bg-neutral-100 bg-opacity-20 rounded-lg items-center controls absolute left-0 right-0 bottom-4 px-4 lg:py-2 py-0.5 mx-4`}>
+            <Button
+              csss={css`
+                  width: 36px;
+                  height: 36px;
+                  background: rgba(255, 255, 255, 0.2);
+                  @media screen and (max-width: 768px) {
+                      width: 30px;
+                      height: 30px;
+                  }
+              `}
+              icon={isLocalPaused ? <PlayCircleOutlined style={{fontSize: 16}} rev={undefined}/> :
+                <PauseOutlined style={{fontSize: 16}} rev={undefined}/>}
+              onClick={() => {
+                // props?.onPause?.(!isLocalPaused);
+                props?.effectSounds?.select?.();
+                changeLocalPause(!isLocalPaused)
+              }}
+            >
+            </Button>
+            <Slider
+              className='w-full mx-4 flex-1'
+              max={100}
+              min={0}
+              handleStyle={{
+                height: 8
+              }}
+              onChange={(e: any) => {
+                refVideo?.current?.seekTo?.(e * 0.01);
+                handleSliderInteractionStart();
+                changeProgress(e * 0.01);
+              }}
+              onChangeComplete={() => {
+                handleSliderInteractionEnd()
+              }}
+              css={css`
 
-          `}
-          step={1}
-          value={progress*100}
-        />
-        <Button
-          csss={css`
-              width: 36px;
-              height: 36px;
-              background: transparent;
-              
-              @media screen and (max-width: 768px) {
-                  width: 30px;
-                  height: 30px;
-              }
-          `}
-          variant="primary"
-          icon={<SoundIcon type={(isLocalMuted) ? 'off' : 'on'}/>}
-          onClick={() => {
-            props?.effectSounds?.select?.();
-            props?.setMute?.(!isLocalMuted);
-            changeLocalMuted(!isLocalMuted);
-            WINDOW?.localStorage?.setItem(key, String(!isLocalMuted));
-          }}
-        >
-          {/*{!isMuted ? <i className='fa fa-volume'></i> : <i className='fa fa-volume-mute'></i>}*/}
-        </Button>
-        {/*<Dropdown className='ml-3'*/}
-        {/*          overlay={*/}
-        {/*            <Menu>*/}
-        {/*              <Menu.Item onClick={() => handleSpeedChange(0.5)}*/}
-        {/*                         className="text-white font-bold">0.5x</Menu.Item>*/}
-        {/*              <Menu.Item onClick={() => handleSpeedChange(1)} className="text-white font-bold">1x</Menu.Item>*/}
-        {/*              <Menu.Item onClick={() => handleSpeedChange(1.5)}*/}
-        {/*                         className="text-white font-bold">1.5x</Menu.Item>*/}
-        {/*              <Menu.Item onClick={() => handleSpeedChange(2)} className="text-white font-bold">2x</Menu.Item>*/}
-        {/*            </Menu>*/}
-        {/*          }*/}
-        {/*          trigger={['click']}*/}
-        {/*>*/}
-        {/*  <Button>*/}
-        {/*    {translationPlatform('speed')} {playbackRate}x <DownOutlined/>*/}
-        {/*  </Button>*/}
-        {/*</Dropdown>*/}
-      </div>
+              `}
+              step={1}
+              value={progress * 100}
+            />
+            <Button
+              csss={css`
+                  width: 36px;
+                  height: 36px;
+                  background: transparent;
+
+                  @media screen and (max-width: 768px) {
+                      width: 30px;
+                      height: 30px;
+                  }
+              `}
+              variant="primary"
+              icon={<SoundIcon type={(isLocalMuted) ? 'off' : 'on'}/>}
+              onClick={() => {
+                props?.effectSounds?.select?.();
+                props?.setMute?.(!isLocalMuted);
+                changeLocalMuted(!isLocalMuted);
+                WINDOW?.localStorage?.setItem(key, String(!isLocalMuted));
+              }}
+            >
+              {/*{!isMuted ? <i className='fa fa-volume'></i> : <i className='fa fa-volume-mute'></i>}*/}
+            </Button>
+
+            {/*<Dropdown className='ml-3'*/}
+            {/*          overlay={*/}
+            {/*            <Menu>*/}
+            {/*              <Menu.Item onClick={() => handleSpeedChange(0.5)}*/}
+            {/*                         className="text-white font-bold">0.5x</Menu.Item>*/}
+            {/*              <Menu.Item onClick={() => handleSpeedChange(1)} className="text-white font-bold">1x</Menu.Item>*/}
+            {/*              <Menu.Item onClick={() => handleSpeedChange(1.5)}*/}
+            {/*                         className="text-white font-bold">1.5x</Menu.Item>*/}
+            {/*              <Menu.Item onClick={() => handleSpeedChange(2)} className="text-white font-bold">2x</Menu.Item>*/}
+            {/*            </Menu>*/}
+            {/*          }*/}
+            {/*          trigger={['click']}*/}
+            {/*>*/}
+            {/*  <Button>*/}
+            {/*    {translationPlatform('speed')} {playbackRate}x <DownOutlined/>*/}
+            {/*  </Button>*/}
+            {/*</Dropdown>*/}
+            {
+              !['video', 'VIDEO_MEDIA'].includes(media?.type ?? '') && (
+                <Button
+                  csss={css`
+                  width: 36px;
+                  height: 36px;
+                  background: transparent;
+                  margin-left: 16px;
+
+                  @media screen and (max-width: 768px) {
+                      width: 30px;
+                      height: 30px;
+                  }
+              `}
+                  variant="primary"
+                  icon={<FullscreenOutlined rev={undefined}/>}
+                  onClick={() => {
+                    let elem = refVideo.current?.player?.player?.player
+                    // if(['video', 'VIDEO_MEDIA'].includes(media?.type ?? '')) {
+                    //   elem = elem?.g;
+                    // }
+                    if (elem) {
+                      showingControls(true)
+                      elem.controls = true;
+                      try {
+                        elem.style.objectFit = 'contain'
+                      } catch (e) {}
+                      setTimeout(() => {
+                        if (elem.requestFullscreen) {
+                          elem.requestFullscreen();
+                        } else if (elem.webkitRequestFullscreen) { /* Safari */
+                          elem.webkitRequestFullscreen();
+                        } else if (elem.msRequestFullscreen) { /* IE11 */
+                          elem.msRequestFullscreen();
+                        }
+                      }, 200)
+                    }
+                  }}
+                >
+                  {/*{!isMuted ? <i className='fa fa-volume'></i> : <i className='fa fa-volume-mute'></i>}*/}
+                </Button>
+              )
+            }
+          </div>
+        )
+      }
+
       {showLoader && (
         <div className={styles.loaderWrapper}>
           <div className={styles.loader}/>
