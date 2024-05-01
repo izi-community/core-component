@@ -51,7 +51,7 @@ export function Story(props: IStoryComponentProps) {
 
   return (
     <div
-      className={`${styles.wrapper} ${classNames?.storyContainer || ''} animate__animated animate__fadeIn animate__fast`}>
+      className={`${styles.wrapper} ${classNames?.storyContainer || ''} primary-bg-1 rounded-xl animate__animated animate__fadeIn animate__fast`}>
       {/*<div className={styles.closeIcon}>*/}
       {/*  <closeIcon/>*/}
       {/*</div>*/}
