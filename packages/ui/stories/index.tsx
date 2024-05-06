@@ -287,6 +287,7 @@ export default function Stories({
 
   function handleNextClick() {
     effectSounds?.select?.();
+    console.log("next", disabledNextRef.current)
     if (disabledNextRef.current) {
       runAnimation((new Date()).getTime().toString())
       setTimeout(() => {
@@ -296,14 +297,14 @@ export default function Stories({
     }
 
     changeDirection('right')
-    if (selectedStoryRef?.current?.index === lastStoryIndex && hasCalledEndedCb.current) {
-      onAllStoriesEnd();
-      return;
-    }
-
-    if (!hasCalledEndedCb.current && selectedStoryRef?.current?.index === lastStoryIndex) {
-      hasCalledEndedCb.current = true;
-    }
+    // if (selectedStoryRef?.current?.index === lastStoryIndex && hasCalledEndedCb.current) {
+    //   onAllStoriesEnd();
+    //   return;
+    // }
+    //
+    // if (!hasCalledEndedCb.current && selectedStoryRef?.current?.index === lastStoryIndex) {
+    //   hasCalledEndedCb.current = true;
+    // }
 
     if (!selectedStoryRef.current) {
       onStoryChange(storiesWithIndex[0].index);

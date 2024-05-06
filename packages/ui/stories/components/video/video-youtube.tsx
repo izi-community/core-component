@@ -73,7 +73,6 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
 
   useEffect(() => {
     document.addEventListener('fullscreenchange', (event) => {
-      console.log("fullscreenchange")
       if (!document.fullscreenElement) {
        showingControls(false)
         let elem = refVideo.current?.player?.player?.player

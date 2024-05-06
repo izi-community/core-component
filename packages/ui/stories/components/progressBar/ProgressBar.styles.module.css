@@ -3,7 +3,7 @@
   background-color: #6a6a6a;
   overflow: hidden;
   height:4px;
-  border-radius: 4px;
+  /*border-radius: 4px;*/
   z-index: 40;
 }
 
@@ -14,7 +14,7 @@
   right: 0;
   top: 0;
   bottom: 0;
-  background-color: #eae8e8;
+  background-color: var(--colorPositive);
   height: 4px;
-  border-radius: 4px;
+  /*border-radius: 4px;*/
 }

@@ -1506,21 +1506,15 @@ pre {
 }
 
 .learn-more--id {
-  text-decoration: none!important;
-  font-weight: bold!important;
+  text-decoration: underline!important;
   color: rgb(10 10 10) !important;
+  text-decoration-color: var(--colorWarn)!important;
+  text-decoration-thickness: 3px!important;
   position: relative;
   display: inline-block;
-  &:after {
-    content: "";
-    position: absolute;
-    bottom: 5px;
-    height: 5px;
-    left: 0;
-    right: 0;
-    z-index: -1;
-    width: 100%;
-    background: var(--colorPrimary);
-    opacity: 0.8;
+  transition: all 0.3s ease-in-out!important;
+
+  &:hover {
+    color:var(--colorWarn)!important;
   }
 }

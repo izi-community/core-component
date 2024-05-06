@@ -108,6 +108,7 @@ export function Actions({ onNextClick, onPrevClick, onPause, onResume }: IAction
     // Handle click action
     const region = event.currentTarget.getAttribute('data-region');
 
+    console.log({region})
     if (region === CONSTANTS.EVENT_REGION.LEFT) {
       onPrevClick();
     } else if (region === CONSTANTS.EVENT_REGION.RIGHT) {
