@@ -12,7 +12,6 @@ html.is-safari body {
 @mixin resetStyle {
   &:not(.header):not(.learn-more--id) {
     font-size: inherit!important;
-    font-weight: inherit!important;
     letter-spacing: inherit!important;
     line-height: inherit!important;
     text-align: left!important;

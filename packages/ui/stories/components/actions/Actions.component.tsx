@@ -12,11 +12,13 @@ interface IActionsProps {
   onPrevClick: () => void;
   onPause: () => void;
   onResume: () => void;
+  width?: any;
+  height?: any;
 }
 
 type IActionEvent = React.MouseEvent | React.TouchEvent;
 
-export function Actions({ onNextClick, onPrevClick, onPause, onResume }: IActionsProps) {
+export function Actions({ onNextClick, onPrevClick, onPause, onResume, ...props }: IActionsProps) {
   const { changeDirection, direction } = useContext(StoriesContext);
   const { mode } = useMobile();
   const [isStoryPaused, setIsStoryPaused] = useState(false);
@@ -149,6 +151,7 @@ export function Actions({ onNextClick, onPrevClick, onPause, onResume }: IAction
     }
   }, 100);
 
+  console.log(props)
   return (
     <Fragment>
       {(isVisible && mode === 'mobile') && (
@@ -161,6 +164,9 @@ export function Actions({ onNextClick, onPrevClick, onPause, onResume }: IAction
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
+            style={{
+              height: props?.height ?  `${props?.height}px` : '100%'
+            }}
           />
           <div
             className={`${styles.right} !w-[50%] block`}
@@ -170,6 +176,9 @@ export function Actions({ onNextClick, onPrevClick, onPause, onResume }: IAction
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
+            style={{
+              height: props?.height ?  `${props?.height}px` : '100%'
+            }}
           />
         </Fragment>
       )}

@@ -1,14 +1,50 @@
 import styles from './CustomComponents.styles.module.css';
 import { IStoryComponentProps } from '../../types';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import useWindowsResize from "../../../../hook/use-windows-resize";
 import {css} from "@emotion/react";
+import { useDebounceCallback, useResizeObserver } from 'usehooks-ts'
+
+function useElementSize(className: string) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const element = document.querySelector(`.${className}`);
+
+    if (!element) {
+      console.warn(`Element with className ${className} not found`);
+      return;
+    }
+
+    const observer = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        setSize({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height
+        });
+      }
+    });
+
+    observer.observe(element);
+
+    // Clean up
+    return () => observer.unobserve(element);
+  }, [className]); // Re-run effect if className changes
+
+  return size;
+}
 
 export function CustomComponent(props: IStoryComponentProps) {
   const {width, height} = useWindowsResize()
   const [isRunningAnimation, runAnimation] = useState<string>('');
   const refTimeout = useRef<any>();
   const animationResetTimeout = useRef<any>();
+  const { height: elementHeight } = useElementSize('custom-component');
+  const ref = useRef<HTMLDivElement>(null)
+  const {  height: elementHeight2 = 0 } = useResizeObserver({
+    ref,
+    box: 'border-box',
+  })
 
   useEffect(() => {
     if (props.disabledNext) {
@@ -36,7 +72,7 @@ export function CustomComponent(props: IStoryComponentProps) {
   }, [props.disabledNext]);
 
   return (
-    <div className={`${styles.component} no-scrollbar`}>
+    <div className={`${styles.component} no-scrollbar`} ref={ref}>
       <props.story.component
         pause={props.onPause}
         resume={props.onResume}
@@ -44,7 +80,15 @@ export function CustomComponent(props: IStoryComponentProps) {
         isPaused={props.isPaused}
         className={`animate__animated ${isRunningAnimation}`}
       />
-      {props.children}
+      {React.Children.map((props.children), (child) => {
+        if (!React.isValidElement(child)) {
+          return child;
+        }
+
+        return React.cloneElement(child, {
+          height: Math.max(elementHeight, elementHeight2),
+        } as any);
+      })}
     </div>
   );
 }
