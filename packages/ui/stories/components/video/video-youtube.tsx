@@ -1,4 +1,4 @@
-import ReactPlayer from "react-player/lazy";
+import ReactPlayer from "../../../react-player";
 import getYouTubeID from "get-youtube-id";
 import {css} from "@emotion/react";
 import useWindowsResize from "../../../../hook/use-windows-resize";
