@@ -11,14 +11,14 @@ const ReactPlayer = forwardRef((props: any, ref) => {
   }, []);
 
   const handleError = (error?: any, data?: any, hlsInstance?: any, hlsGlobal?: any) => {
-    props.onError?.(error, data, hlsInstance, hlsGlobal);
+    props?.onError?.(error, data, hlsInstance, hlsGlobal);
     if (hlsInstance && error === 'hlsError') {
       setIsHls(false);
     }
   };
 
   const playerProps = {
-    ...props,
+    ...(props ?? {}),
     ref,
     onError: handleError,
     config: {
@@ -34,4 +34,4 @@ const ReactPlayer = forwardRef((props: any, ref) => {
   return <ReactPlayerComponent {...playerProps} />;
 });
 
-export default memo(ReactPlayer);
+export default ReactPlayer

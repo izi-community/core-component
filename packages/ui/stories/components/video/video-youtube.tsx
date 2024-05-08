@@ -134,7 +134,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                 setShowLoader(true)
                 changeLocalPause(false)
               }}
-              onError={(...props) => {
+              onError={(...props: any) => {
                 console.log('onError');
               }}
               onEnded={() => {
