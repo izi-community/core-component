@@ -1,11 +1,18 @@
-import SVGClose from '../../../../../resources/icons/svg/ic_close.svg'
+import { css } from '@emotion/react';
+import SVGMenu from "../../../../../resources/icons/svg/ic_menu_outline.svg";
+import Button from "../../../button";
 interface IProps {
 
 }
 
-export function CloseIcon() {
+export const CloseIcon = (props: any) => {
   return (
-    // @ts-ignore
-    <SVGClose width={32} height={32}/>
+    <Button
+      onClick={props?.onClick}
+      csss={css`background: transparent !important;`}
+      //@ts-ignore
+      icon={<SVGMenu css={css`path {
+            fill: var(--colorTypographyPlaceholder);
+        }`} width={28} height={28}/>}/>
   );
 }

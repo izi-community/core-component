@@ -43,7 +43,8 @@ export interface IStoryProps {
     error?: () => void;
   },
   children?: ReactNode;
-
+  onCloseCallback?: () => void;
+  onInit: (args: any) => void;
 }
 
 export interface IStoryContext {

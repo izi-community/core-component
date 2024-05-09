@@ -40,7 +40,7 @@ const WrapperPlayChild = ({children, selectedStory, classNames = {}, width, heig
                   padding-bottom: ${searchParams.get('footer') ? 0 : 51}px !important;
               }
           `}
-      className={`${styles.main} ${classNames?.main || ''} z-[1] animate__animated animate__faster ${animation}`}
+      className={`${styles.main} ${classNames?.main || ''} z-[1] flex flex-col animate__animated animate__faster ${animation}`}
     >
       {children}
     </div>
@@ -91,12 +91,12 @@ const StoryWrapper = ({
       story={selectedStory}
       isPaused={isPaused}
     >
-      <Actions
-        onNextClick={debouncedNextClick}
-        onPrevClick={debouncedPrevClick}
-        onPause={handlePause}
-        onResume={handleResume}
-      />
+      {/*<Actions*/}
+      {/*  onNextClick={debouncedNextClick}*/}
+      {/*  onPrevClick={debouncedPrevClick}*/}
+      {/*  onPause={handlePause}*/}
+      {/*  onResume={handleResume}*/}
+      {/*/>*/}
     </Story>
   )
   // if (mode === 'desktop') {
@@ -234,6 +234,8 @@ export default function Stories({
                                   disabledNext = false,
                                   effectSounds = {},
                                   children,
+                                  onCloseCallback = () => {},
+                                  onInit = () => {}
                                 }: IStoryProps): JSX.Element | null {
   const {mode} = useMobile()
   const [searchParams] = useSearchParams();
@@ -265,6 +267,13 @@ export default function Stories({
   useEffect(() => {
     setIsPaused(!autoPlay)
   }, [autoPlay]);
+
+  useEffect(() => {
+    onInit({
+      onNext: handleNextClick,
+      onBack: handlePrevClick,
+    })
+  }, [onInit]);
 
   useEffect(() => {
     disabledNextRef.current = disabledNext
@@ -415,7 +424,7 @@ export default function Stories({
           classNames={classNames}
 
         >
-          <Progress activeStoryIndex={selectedStory.index} isPaused={isPaused}/>
+          <Progress onClick={onCloseCallback} activeStoryIndex={selectedStory.index} isPaused={isPaused}/>
 
           <StoryWrapper
             defaultDuration={defaultDuration}
@@ -439,7 +448,7 @@ export default function Stories({
             isRunningAnimation={isRunningAnimation}
             stories={stories}
             onStoryChange={onStoryChange}
-          />
+            onInit={onInit}/>
           {children}
         </WrapperPlayChild>
 

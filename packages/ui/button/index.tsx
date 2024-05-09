@@ -12,7 +12,7 @@ export type TouchOrMouseEvent<T> =
   & Partial<Omit<TouchEvent<T>, 'nativeEvent'>>;
 type ButtonProps = {
   children?: ReactNode;
-  variant?: 'primary' | 'secondary' | 'tertiary' | undefined | 'loading' | 'positive' | 'info' | 'warn';
+  variant?: 'primary' | 'secondary' | 'tertiary' | undefined | 'loading' | 'positive' | 'info' | 'warn' | 'critical';
   type?: 'button' | 'submit' | 'reset' | undefined;
   disabled?: boolean;
   loading?: boolean;
@@ -91,21 +91,25 @@ const Button = ({
     if (variant === 'warn') {
       return `bg-[var(--colorWarnDisabled)] text-[var(--colorWhite)]`
     }
+
+    if (variant === 'critical') {
+      return `bg-[var(--colorCriticalDisabled)] text-[var(--colorWhite)]`
+    }
     return ''
   }, [variant])
 
   const normalVariant = useMemo(() => {
 
     if (['primary', 'loading'].includes(variant)) {
-      return `bg-[var(--colorPrimary)] text-[var(--colorPrimaryFore)] transition-all hover:bg-[var(--colorPrimaryHover)] active:bg-[var(--colorPrimaryActive)]`
+      return `bg-[var(--colorPrimary)] text-[var(--colorPrimaryFore)] transition-all lg:hover:bg-[var(--colorPrimaryHover)] active:bg-[var(--colorPrimaryActive)]`
     }
 
     if (variant === 'secondary') {
-      return `bg-[var(--colorSecondary)] text-[var(--colorSecondaryFore)] transition-all hover:bg-[var(--colorSecondaryHover)] active:bg-[var(--colorSecondaryActive)]`
+      return `bg-[var(--colorSecondary)] text-[var(--colorSecondaryFore)] transition-all lg:hover:bg-[var(--colorSecondaryHover)] active:bg-[var(--colorSecondaryActive)]`
     }
 
     if (variant === 'tertiary') {
-      return `bg-[var(--colorTertiary)] text-[var(--colorTertiaryFore)] transition-all hover:bg-[var(--colorTertiaryHover)] active:bg-[var(--colorTertiaryActive)]`
+      return `bg-[var(--colorTertiary)] text-[var(--colorTertiaryFore)] transition-all lg:hover:bg-[var(--colorTertiaryHover)] active:bg-[var(--colorTertiaryActive)]`
     }
 
 
@@ -119,6 +123,10 @@ const Button = ({
 
     if (variant === 'warn') {
       return `bg-[var(--colorWarn)] text-[var(--colorWhite)]`
+    }
+
+    if (variant === 'critical') {
+      return `bg-[var(--colorCritical)] text-[var(--colorWhite)]`
     }
 
     return ''
@@ -151,7 +159,7 @@ const Button = ({
       disabled={disabled}
       className={classNames(stretchStyle,
         variantStyle,
-        `${variant === 'loading' || (icon && !children) ? 'w-[44px] h-[44px] !rounded-[44px] flex justify-center items-center' : 'px-4 py-[11px]'} rounded-[var(--space20)] justify-center items-center space-x-2`)}>
+        `${variant === 'loading' || (icon && !children) ? 'w-[44px] h-[44px] !rounded-[44px] flex justify-center items-center' : 'px-4 py-[11px]'} active:scale-95 transition-all duration-200 ease-in-out rounded-[var(--space20)] justify-center items-center space-x-2`)}>
       {icon || <Fragment/>}
       {
         !loading && children && (
@@ -172,25 +180,17 @@ export const ConfirmButton = ({csss, isSubmitted = false, ...props}: {csss?: Int
 
   return (
     <Button
+      stretch
       csss={css`
-          width: 64px;
-          height: 64px;
-          border-radius: 70px;
           align-items: center;
           justify-content: center;
           display: flex;
-          padding: 0;
-          
-          @media screen and (max-width: 768px) {
-              width: 52px;
-              height: 52px;
-          }
       `}
       variant={isSubmitted ? 'positive' : 'primary'}
       // @ts-ignore
-      icon={<SVGCircleTick width={24} height={24}/>}
       {...props}
     >
+      Submit
     </Button>
   )
 }

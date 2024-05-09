@@ -1,18 +1,7 @@
 .main {
   position: relative;
   touch-action: manipulation;
-  background-color: black;
+  /*background-color: black;*/
   user-select: none;
   -webkit-touch-callout:none;
-}
-
-.main:after {
-  background: linear-gradient(180deg,#00000038,#00000000 40%);
-  content: "";
-  height: 100px;
-  left: 0;
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: -1;
 }
