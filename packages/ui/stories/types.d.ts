@@ -45,6 +45,7 @@ export interface IStoryProps {
   children?: ReactNode;
   onCloseCallback?: () => void;
   onInit: (args: any) => void;
+  actions?: ReactNode[];
 }
 
 export interface IStoryContext {

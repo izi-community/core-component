@@ -235,7 +235,8 @@ export default function Stories({
                                   effectSounds = {},
                                   children,
                                   onCloseCallback = () => {},
-                                  onInit = () => {}
+                                  onInit = () => {},
+                                  actions = [],
                                 }: IStoryProps): JSX.Element | null {
   const {mode} = useMobile()
   const [searchParams] = useSearchParams();
@@ -424,7 +425,7 @@ export default function Stories({
           classNames={classNames}
 
         >
-          <Progress onClick={onCloseCallback} activeStoryIndex={selectedStory.index} isPaused={isPaused}/>
+          <Progress actions={actions} onClick={onCloseCallback} activeStoryIndex={selectedStory.index} isPaused={isPaused}/>
 
           <StoryWrapper
             defaultDuration={defaultDuration}

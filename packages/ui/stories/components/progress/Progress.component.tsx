@@ -3,11 +3,13 @@ import {css} from '@emotion/react'
 import styles from './progress.styles.module.css';
 
 import {CloseIcon} from "../closeIcon";
+import {ReactNode} from "react";
 
 interface IProgressProps {
   activeStoryIndex: number;
   isPaused: boolean;
   onClick?: () => void;
+  actions?: ReactNode[];
 }
 
 export function Progress(props: IProgressProps) {
@@ -42,6 +44,7 @@ export function Progress(props: IProgressProps) {
           />
         </div>
       </div>
+      {props?.actions}
     </div>
   );
 }
