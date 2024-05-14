@@ -16,7 +16,7 @@ export function Progress(props: IProgressProps) {
   const {stories, classNames} = useStoriesContext();
 
   return (
-    <div className="flex w-full items-center space-x-3 z-20 lg:py-3 pr-4 pl-1">
+    <div className="flex w-full items-center space-x-3 z-20 lg:py-3 pr-1 pl-1">
 
       <CloseIcon onClick={props?.onClick}/>
       <div className="flex-1 relative">
