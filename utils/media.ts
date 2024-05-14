@@ -31,6 +31,8 @@ export function getVideo(url?: string) {
 
   if (!url) return '';
 
+  if (url.indexOf('api-v2') == 0) return `https://${url}`;
+
   // for other hosting
   if (url.indexOf('http') == 0 || url.indexOf('https') == 0) return url;
 
