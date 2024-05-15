@@ -3,6 +3,7 @@ import {ReactNode} from "react";
 interface IStoryObject {
   type: string;
   url: string;
+  subtitle?: string;
   duration: number;
   component?: any;
   header?: any;
