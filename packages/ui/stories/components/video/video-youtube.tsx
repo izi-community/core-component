@@ -236,7 +236,11 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
       {
         !isShowingControls && (
           <div
+<<<<<<< Updated upstream
             className={`flex z-20 bg-neutral-600 bg-opacity-60 rounded-lg items-center controls absolute left-0 right-0 bottom-10 px-4 lg:py-2 py-0.5 mx-4`}>
+=======
+            className={`flex z-20 bg-neutral-900 shadow rounded-lg items-center controls absolute left-0 right-0 bottom-4 px-4 lg:py-2 py-0.5 mx-4`}>
+>>>>>>> Stashed changes
             <Button
               csss={css`
                   width: 36px;
