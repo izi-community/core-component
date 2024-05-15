@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react'
 
 import subtitleParser from './subtitle-parser'
+import ConvoBg from '../../../../../resources/icons/svg/ic_convo.svg'
+import { css } from '@emotion/react'
+
 
 /**
  * * subtitles interface
@@ -95,7 +98,20 @@ const Subtitles = ({
       zIndex: 20,
       left: 0,
       right: 0,
-    }}>
+    }}
+    css={css`
+        svg {
+            position: absolute;
+            left: 6px;
+            right: 0;
+            width:300px;
+            height: 300px;
+            top: -60px;
+            z-index: -1;
+            opacity: 0.8;
+        }
+    `}
+    >
       {text ? (
         <div
           style={{
@@ -116,6 +132,11 @@ const Subtitles = ({
           {text}
         </div>
       ) : null}
+      {
+        text && (
+          <ConvoBg/>
+        )
+      }
     </div>
   )
 }
