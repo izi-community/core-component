@@ -71,7 +71,7 @@ export function Video(props: IStoryComponentProps) {
         setMute={setMute}
         isMuted={isMuted}
         isPaused={isPaused}
-        media={{type: props?.story?.payload?.media?.type, url: props.story.url}}
+        media={{type: props?.story?.payload?.media?.type, url: props.story.url, subtitle: props.story.subtitle}}
       />
       {/*<div className={styles.soundIcon} onClick={() => setMute(!isMuted)}>*/}
       {/*  <SoundIcon type={isMuted ? 'off' : 'on'}/>*/}

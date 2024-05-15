@@ -11,6 +11,7 @@ import { useInView } from 'react-intersection-observer';
 import styles from './Video.styles.module.css'
 import useSwiperHook from "../../hooks/use-swiper-hook";
 import {getVideo} from "../../../../../utils/media";
+import Subtitles from "./Subtitle";
 
 type VideoYoutubeContextProps = {
   media?: any;
@@ -26,7 +27,7 @@ const key = 'RSIsMute';
 const WINDOW: any = typeof window === 'undefined' ? {} : window;
 
 const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeContextProps) => {
-  console.log("🚀 ~ VideoYoutubeContext ~ media:", media)
+
   const {handleSliderInteractionEnd, handleSliderInteractionStart} = useSwiperHook()
   const {width, height} = useWindowsResize()
   const [progress, changeProgress] = useState(0);
@@ -40,6 +41,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
     threshold: 0
   });
 
+  const [currentTime, changeCurrentTime] = useState(0)
   const [orientation, setOrientation] = useState<string>('');
 
   const handleReady = () => {
@@ -62,6 +64,11 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
         setOrientation(_o)
       }
     }
+  };
+
+  const handleProgress = (state: any) => {
+    console.log(state.playedSeconds)
+    changeCurrentTime(state.playedSeconds);
   };
 
   useEffect(() => {
@@ -110,9 +117,28 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
 
             width: 100%;
             height: 100%;
-
+            position: relative;
+  
             iframe {
                 pointer-events: ${isShowingControls ? 'auto' : 'none'};
+            }
+
+            .player-wrappers video::-webkit-media-text-track-display,
+            .video-container video::-webkit-media-text-track-display
+            {
+                position: absolute;
+                bottom: 20%; /* Adjust this to change the vertical position */
+                width: 100%;
+                text-align: center;
+            }
+
+            .player-wrappers video::cue,
+            .video-container video::cue  {
+                background: rgba(0, 0, 0, 0); /* Background color of the caption */
+                color: white; /* Text color of the caption */
+                font-size: 1.2em; /* Font size of the caption */
+                padding: 0.2em; /* Padding around the caption text */
+                border-radius: 5px; /* Rounded corners for the caption */
             }
         `}
         className={`${['video', 'VIDEO_MEDIA'].includes(media?.type ?? '') ? 'video-container' : 'player-wrappers'} `}>
@@ -174,21 +200,22 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                   attributes: {
                     crossOrigin: "true",
                   },
-                  tracks: [
-                    {
-                      kind: "subtitles",
-                      src: media?.subtitle,
-                      srcLang: "en",
-                      default: true,
-                      label: "English"
-                    },
-                  ]
+                  // tracks: [
+                  //   {
+                  //     kind: "subtitles",
+                  //     src: media?.subtitle,
+                  //     srcLang: "en",
+                  //     default: true,
+                  //     label: "English"
+                  //   },
+                  // ]
                 },
               }}
               progressInterval={100}
               onProgress={(e: any) => {
                 setShowLoader(false)
                 changeProgress(e?.played ?? 0);
+                handleProgress(e)
               }}
 
               muted={isLocalMuted}
@@ -206,6 +233,17 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
             />
           )
         }
+        {
+          media?.subtitle && (
+            <Subtitles
+              {...{ currentTime }}
+              selectedsubtitle={{
+                file: media?.subtitle,
+              }}
+            />
+          )
+        }
+
       </div>
       {
         isOnUnstarted && (
