@@ -170,6 +170,18 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                   }
                 },
                 file: {
+                  attributes: {
+                    crossOrigin: "true",
+                  },
+                  tracks: [
+                    {
+                      kind: "subtitles",
+                      src: `https://${media?.url}`,
+                      srcLang: "en",
+                      default: true,
+                      label: "English"
+                    },
+                  ]
                 },
               }}
               progressInterval={100}
