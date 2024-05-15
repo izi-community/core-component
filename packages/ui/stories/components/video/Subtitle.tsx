@@ -94,7 +94,7 @@ const Subtitles = ({
   return (
     <div style={{
       position: 'absolute',
-      top: '20%',
+      top: '10%',
       zIndex: 20,
       left: 0,
       right: 0,
@@ -104,19 +104,24 @@ const Subtitles = ({
             position: absolute;
             left: 6px;
             right: 0;
-            width:300px;
+            width: 60%;
             height: 300px;
             top: -60px;
             z-index: -1;
-            opacity: 0.8;
+            opacity: ${text ? 0.6 : 0};
+            transition: all .3s ease-in-out;
+        }
+        .text {
+            transform: rotate(-5deg);
         }
     `}
     >
       {text ? (
         <div
+          className="text"
           style={{
             width: '60%',
-            fontSize: 20,
+            fontSize: 18,
             opacity: 0.6,
             textAlign: 'left',
             alignSelf: 'center',
@@ -132,11 +137,7 @@ const Subtitles = ({
           {text}
         </div>
       ) : null}
-      {
-        text && (
-          <ConvoBg/>
-        )
-      }
+      <ConvoBg/>
     </div>
   )
 }
