@@ -26,6 +26,7 @@ const key = 'RSIsMute';
 const WINDOW: any = typeof window === 'undefined' ? {} : window;
 
 const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeContextProps) => {
+  console.log("🚀 ~ VideoYoutubeContext ~ media:", media)
   const {handleSliderInteractionEnd, handleSliderInteractionStart} = useSwiperHook()
   const {width, height} = useWindowsResize()
   const [progress, changeProgress] = useState(0);
