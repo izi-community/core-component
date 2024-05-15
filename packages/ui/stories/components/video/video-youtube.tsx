@@ -176,7 +176,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                   tracks: [
                     {
                       kind: "subtitles",
-                      src: `https://${media?.url}`,
+                      src: `https://${media?.subtitle}`,
                       srcLang: "en",
                       default: true,
                       label: "English"
