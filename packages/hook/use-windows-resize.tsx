@@ -19,7 +19,7 @@ function useWindowsResize() {
   useEffect(() => {
     let height = mode === 'mobile' ? windowHeight : windowHeight * (getOrientation() === 'portrait' ? 0.75 : 0.9);
 
-    let width = mode === 'mobile' ? windowWidth : height * (getOrientation() === 'portrait' ? 0.55 : 0.57);
+    let width = mode === 'mobile' ? windowWidth : height * (getOrientation() === 'portrait' ? 0.55 : 0.54);
 
     setSize({ width, height });
   }, [windowWidth, windowHeight, mode]);
