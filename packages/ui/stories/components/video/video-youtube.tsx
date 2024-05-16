@@ -238,7 +238,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
             <Subtitles
               {...{ currentTime }}
               selectedsubtitle={{
-                file: media?.subtitle,
+                file: media?.subtitle === 'https://trainizi.com/subtitle.vtt' ? 'https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/prod_video/subtitle+(1).vtt' : media?.subtitle,
               }}
             />
           )

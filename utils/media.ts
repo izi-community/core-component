@@ -24,6 +24,10 @@ export function getImage(url?: string, size: any = 'SM', mode: string | undefine
 }
 
 export function getVideo(url?: string) {
+  console.log({url})
+  if(url === 'https://trainizi.com/ev_final (2).mp4') {
+    return 'https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/prod_video/ev_final+(2).mp4'
+  }
   let _api = API;
   if (import.meta.env.NODE_ENV === 'production') {
     _api = process.env.NEXT_PUBLIC_API ?? "";
