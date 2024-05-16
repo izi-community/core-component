@@ -67,7 +67,6 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   };
 
   const handleProgress = (state: any) => {
-    console.log(state.playedSeconds)
     changeCurrentTime(state.playedSeconds);
   };
 
