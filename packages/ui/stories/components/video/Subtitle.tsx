@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 
 import subtitleParser from './subtitle-parser'
 import ConvoBg from '../../../../../resources/icons/svg/ic_convo.svg'
@@ -44,6 +44,10 @@ const Subtitles = ({
    * * method for parsing varies depending on the file extension (vtt or srt)
    */
   const [subtitles, setSubtitles] = useState<Subtitle[]>([])
+  const [textHeight, setTextHeight] = useState(120);
+  const [textWidth, setTextWidth] = useState(192);
+
+  const textRef = useRef(null);
 
   const parseSubtitles = async (): Promise<void> => {
 
@@ -90,54 +94,80 @@ const Subtitles = ({
     }
   }, [currentTime, subtitles])
 
+  useEffect(() => {
+    if (textRef.current) {
+      if (textRef.current.offsetHeight > 120) {
+        setTextHeight(textRef.current.offsetHeight);
+      }
+
+      if (textRef.current.offsetWidth > 192) {
+        setTextWidth(textRef.current.offsetWidth);
+      }
+      
+    }
+  }, [text]);
 
   return (
     <div style={{
-      position: 'absolute',
-      top: '10%',
-      zIndex: 20,
-      left: 0,
-      right: 0,
-    }}
-    css={css`
+        position: 'absolute',
+        top: '10%',
+        zIndex: 20,
+        left: 0,
+        right: 0,
+      }}
+      css={css`
+        .wrap-container {
+          position: relative;
+          height: ${textHeight  + 105}px;
+          width: 60%;
+        }
+
+        .container-svg {
+          position: absolute;
+          top: 0;
+          opacity: ${text ? 0.6 : 0};
+          transition: all .3s ease-in-out;
+        }
+
         svg {
-            position: absolute;
-            left: 6px;
-            right: 0;
-            width: 60%;
-            height: 300px;
-            top: -60px;
-            z-index: -1;
-            opacity: ${text ? 0.6 : 0};
-            transition: all .3s ease-in-out;
+          height: ${textHeight + 105}px;
+          width: ${textWidth + 22}px;
         }
+
         .text {
+            position: absolute;
+            top: 0;
+            z-index: 10;
+            margin: 35px 0px 0px 20px;
+            fontSize: 18;
+            opacity: 0.6;
+            textAlign: left;
+            alignSelf: center;
+            color: rgba(0,0,0,8);
+            textShadowColor: #000;
+            textShadowOffset: { width: 2, height: 2 };
+            textShadowRadius: 2;
+            transition: all 0.3 easy;
             transform: rotate(-5deg);
+            ${textStyle}
         }
-    `}
+      `}
     >
       {text ? (
-        <div
-          className="text"
-          style={{
-            width: '60%',
-            fontSize: 18,
-            opacity: 0.6,
-            textAlign: 'left',
-            alignSelf: 'center',
-            padding: 25,
-            color: 'rgba(0,0,0,8)',
-            textShadowColor: '#000',
-            textShadowOffset: { width: 2, height: 2 },
-            textShadowRadius: 2,
-            transition: 'all 0.3 easy',
-            ...textStyle,
-          }}
-        >
-          {text}
-        </div>
+        <>
+          <div className='wrap-container'>
+            <div
+              ref={textRef}
+              className="text"
+            >
+              {text}
+            </div>
+            <div className='container-svg'>
+              <ConvoBg/>
+            </div>
+          </div>
+        </>
       ) : null}
-      <ConvoBg/>
     </div>
   )
 }
