@@ -12,6 +12,7 @@ import styles from './Video.styles.module.css'
 import useSwiperHook from "../../hooks/use-swiper-hook";
 import {getVideo} from "../../../../../utils/media";
 import Subtitles from "./Subtitle";
+import {isMobile} from 'react-device-detect';
 
 type VideoYoutubeContextProps = {
   media?: any;
@@ -37,6 +38,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   const [showLoader, setShowLoader] = useState(false);
   const [isOnUnstarted, changeIsOnUnstarted] = useState(false);
   const [isShowingControls, showingControls] = useState(false);
+  const [blurControlVideo, setBlurControlVideo] = useState(true);
   const { ref, inView } = useInView({
     threshold: 0
   });
@@ -107,6 +109,9 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
 
   return (
     <div
+      onMouseEnter={() => setBlurControlVideo(false)}
+      onMouseLeave={() => setBlurControlVideo(true)}
+      onClick={(e) => {setBlurControlVideo(!blurControlVideo)}}
       ref={ref}
       className={`w-full h-full flex items-center justify-center rounded-lg video-frame ${className}`}>
       <div
@@ -219,7 +224,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               }}
 
               muted={isLocalMuted}
-              controls={isShowingControls}
+              controls={isShowingControls && blurControlVideo}
               loop={false}
               playing={!isLocalPaused}
               onClickPreview={() => {
@@ -272,7 +277,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
         )
       }
       {
-        !isShowingControls && (
+        (!isShowingControls && !blurControlVideo) && (
           <div
             className={`flex z-20 bg-neutral-900 shadow rounded-lg items-center controls absolute left-0 right-0 bottom-4 px-4 lg:py-2 py-0.5 mx-4`}>
             <Button
@@ -287,7 +292,8 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               `}
               icon={isLocalPaused ? <PlayCircleOutlined style={{fontSize: 16}} rev={undefined}/> :
                 <PauseOutlined style={{fontSize: 16}} rev={undefined}/>}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 // props?.onPause?.(!isLocalPaused);
                 props?.effectSounds?.select?.();
                 changeLocalPause(!isLocalPaused)
@@ -328,7 +334,8 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               `}
               variant="primary"
               icon={<SoundIcon type={(isLocalMuted) ? 'off' : 'on'}/>}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 props?.effectSounds?.select?.();
                 props?.setMute?.(!isLocalMuted);
                 changeLocalMuted(!isLocalMuted);
