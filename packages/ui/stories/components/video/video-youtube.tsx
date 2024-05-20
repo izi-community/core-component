@@ -69,7 +69,6 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   };
 
   const handleProgress = (state: any) => {
-    console.log(state.playedSeconds)
     changeCurrentTime(state.playedSeconds);
   };
 
@@ -80,6 +79,12 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
       changeLocalPause(true)
     }
   }, [inView]);
+
+  useEffect(() => {
+    if(media?.url) {
+      setShowLoader(true)
+    }
+  }, [media?.url]);
 
   useEffect(() => {
     document.addEventListener('fullscreenchange', (event) => {
@@ -155,6 +160,9 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                 console.log('onPause');
               }}
               onStart={() => {
+                setTimeout(() => {
+                  handleReady()
+                }, 500)
                 if(isOnUnstarted) {
                   changeLocalPause(false)
                   changeIsOnUnstarted(false)
@@ -162,11 +170,18 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                 console.log('onStart');
               }}
               onReady={() => {
-                handleReady()
+                setTimeout(() => {
+                  handleReady()
+                }, 500)
                 setShowLoader(true)
                 changeLocalPause(false)
               }}
-              onError={(...props: any) => {
+              onError={(error: any) => {
+                if(error?.name === 'NotAllowedError') {
+                  changeIsOnUnstarted(true)
+                  changeLocalPause(true)
+                  setShowLoader(false)
+                }
                 console.log('onError');
               }}
               onEnded={() => {
@@ -175,6 +190,9 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               }}
               onBuffer={() => {
                 console.log('onBuffer');
+                setTimeout(() => {
+                  handleReady()
+                }, 500)
               }}
               style={{
                 width: '100%',
@@ -218,7 +236,10 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               }}
               progressInterval={100}
               onProgress={(e: any) => {
-                setShowLoader(false)
+                if ((e?.played ?? 0) > 0) {
+                  setShowLoader(false)
+                }
+
                 changeProgress(e?.played ?? 0);
                 handleProgress(e)
               }}

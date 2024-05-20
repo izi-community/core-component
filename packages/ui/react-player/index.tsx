@@ -12,6 +12,7 @@ const ReactPlayer = forwardRef((props: any, ref) => {
 
   const handleError = (error?: any, data?: any, hlsInstance?: any, hlsGlobal?: any) => {
     props?.onError?.(error, data, hlsInstance, hlsGlobal);
+    console.log(error, data, hlsInstance, hlsGlobal)
     if (hlsInstance && error === 'hlsError') {
       setIsHls(false);
     }
