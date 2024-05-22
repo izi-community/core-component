@@ -5,6 +5,7 @@ import SVGCircleTick from '../../../resources/icons/svg/ic_circle_tick.svg'
 import {Interpolation} from "@emotion/serialize";
 import {css, Theme} from "@emotion/react";
 import SVGXIcon from "../../../resources/icons/svg/ic_x.svg";
+import {useTranslation} from 'react-i18next'
 
 export type TouchOrMouseEvent<T> =
   SyntheticEvent
@@ -177,7 +178,7 @@ const Button = ({
 }
 
 export const ConfirmButton = ({csss, isSubmitted = false, ...props}: {csss?: Interpolation<Theme>, isSubmitted?: boolean} & ButtonProps) => {
-
+  const {t} = useTranslation('platform')
   return (
     <Button
       stretch
@@ -190,7 +191,7 @@ export const ConfirmButton = ({csss, isSubmitted = false, ...props}: {csss?: Int
       // @ts-ignore
       {...props}
     >
-      Submit
+      {t('question.response.submit')}
     </Button>
   )
 }
