@@ -13,6 +13,7 @@ import useSwiperHook from "../../hooks/use-swiper-hook";
 import {getVideo} from "../../../../../utils/media";
 import Subtitles from "./Subtitle";
 import {isMobile} from 'react-device-detect';
+import Typewriter from "./typewriter";
 
 type VideoYoutubeContextProps = {
   media?: any;
@@ -259,14 +260,32 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
             />
           )
         }
+        {/*{*/}
+        {/*  media?.subtitle && (*/}
+        {/*    <Subtitles*/}
+        {/*      {...{ currentTime }}*/}
+        {/*      selectedsubtitle={{*/}
+        {/*        file: media?.subtitle === 'https://trainizi.com/subtitle.vtt' ? 'https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/prod_video/subtitle+(1).vtt' : media?.subtitle,*/}
+        {/*      }}*/}
+        {/*    />*/}
+        {/*  )*/}
+        {/*}*/}
+
         {
-          media?.subtitle && (
-            <Subtitles
-              {...{ currentTime }}
-              selectedsubtitle={{
-                file: media?.subtitle === 'https://trainizi.com/subtitle.vtt' ? 'https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/prod_video/subtitle+(1).vtt' : media?.subtitle,
+          media?.subText && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '10%',
+                zIndex: 20,
+                left: 0,
+                right: 0,
+                padding: 8,
+                opacity: 0.6
               }}
-            />
+            >
+              <Typewriter progress={currentTime} text={media?.subText}/>
+            </div>
           )
         }
 

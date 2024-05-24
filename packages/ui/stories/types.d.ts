@@ -4,6 +4,7 @@ interface IStoryObject {
   type: string;
   url: string;
   subtitle?: string;
+  subText?: string;
   duration: number;
   component?: any;
   header?: any;
