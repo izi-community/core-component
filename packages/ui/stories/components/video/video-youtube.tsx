@@ -87,6 +87,11 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
     }
   }, [media?.url]);
 
+  const checkURL = (url: string) => {
+    const searchString = 'api-v2.trainizi.com';
+    return url.includes(searchString);
+  }
+
   useEffect(() => {
     document.addEventListener('fullscreenchange', (event) => {
       if (!document.fullscreenElement) {
@@ -272,7 +277,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
         {/*}*/}
 
         {
-          media?.subText && (
+          (media?.subText && checkURL(media?.url)) && (
             <div
               style={{
                 position: 'absolute',
