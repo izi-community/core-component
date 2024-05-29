@@ -11,8 +11,6 @@ import { useInView } from 'react-intersection-observer';
 import styles from './Video.styles.module.css'
 import useSwiperHook from "../../hooks/use-swiper-hook";
 import {getVideo} from "../../../../../utils/media";
-import Subtitles from "./Subtitle";
-import {isMobile} from 'react-device-detect';
 import Typewriter from "./typewriter";
 
 type VideoYoutubeContextProps = {
@@ -44,6 +42,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
     threshold: 0
   });
 
+  const isLocalMutedRef = useRef<boolean>(false);
   const [currentTime, changeCurrentTime] = useState(0)
   const [orientation, setOrientation] = useState<string>('');
 
@@ -74,6 +73,10 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   };
 
   useEffect(() => {
+    isLocalMutedRef.current = isLocalMuted
+  }, [isLocalMuted]);
+
+  useEffect(() => {
     if(inView) {
       changeLocalPause(false)
     } else {
@@ -83,7 +86,14 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
 
   useEffect(() => {
     if(media?.url) {
-      setShowLoader(true)
+      setShowLoader(true);
+
+      (window as any).onMute = () => {
+        props?.effectSounds?.select?.();
+        props?.setMute?.(!isLocalMutedRef.current);
+        changeLocalMuted(!isLocalMutedRef.current);
+        WINDOW?.localStorage?.setItem(key, String(!isLocalMutedRef.current));
+      }
     }
   }, [media?.url]);
 
