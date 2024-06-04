@@ -237,7 +237,6 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                 },
                 file: {
                   attributes: {
-                    crossOrigin: "true",
                   },
                   // tracks: [
                   //   {
