@@ -8,7 +8,7 @@ import * as utilities from './utilities';
 import {debounce} from "lodash";
 import {css} from "@emotion/react";
 import {useSearchParams} from "react-router-dom";
-import 'swiper/css';
+// import 'swiper/css';
 import useMobile from '../../hook/use-mobile';
 
 const WrapperPlayChild = ({children, selectedStory, classNames = {}, width, height, searchParams}: {children: ReactNode, height: any, width: any, searchParams?: any, classNames?: any, selectedStory?: IStoryIndexedObject}) => {

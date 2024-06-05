@@ -9,7 +9,6 @@ import {SoundIcon} from "../soundIcon";
 import {useEffect, useRef, useState} from "react";
 import { useInView } from 'react-intersection-observer';
 import styles from './Video.styles.module.css'
-import useSwiperHook from "../../hooks/use-swiper-hook";
 import {getVideo} from "../../../../../utils/media";
 import Typewriter from "./typewriter";
 
@@ -28,7 +27,6 @@ const WINDOW: any = typeof window === 'undefined' ? {} : window;
 
 const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeContextProps) => {
 
-  const {handleSliderInteractionEnd, handleSliderInteractionStart} = useSwiperHook()
   const {width, height} = useWindowsResize()
   const [progress, changeProgress] = useState(0);
   const refVideo: any = useRef();
@@ -363,11 +361,11 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               }}
               onChange={(e: any) => {
                 refVideo?.current?.seekTo?.(e * 0.01);
-                handleSliderInteractionStart();
+                // handleSliderInteractionStart();
                 changeProgress(e * 0.01);
               }}
               onChangeComplete={() => {
-                handleSliderInteractionEnd()
+                // handleSliderInteractionEnd()
               }}
               css={css`
 
