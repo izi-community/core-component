@@ -7,6 +7,7 @@ import useWindowsResize from "../../hook/use-windows-resize";
 
 const Modal = ({children, isShowing = false, onClose = () => {}}: {children: ReactNode, isShowing?: boolean, onClose: () => void;}) => {
   const {width} = useWindowsResize()
+
   return isShowing && (
     <div
       css={css`
@@ -33,7 +34,6 @@ const Modal = ({children, isShowing = false, onClose = () => {}}: {children: Rea
           key="overlay"
           aria-modal="true"
           role="dialog"
-          data-rsbs-overlay
           tabIndex={-1}
           css={css`
               width: ${width * 0.8}px;
@@ -42,6 +42,7 @@ const Modal = ({children, isShowing = false, onClose = () => {}}: {children: Rea
               margin: 10px;
               border-radius: 10px;
               position: relative;
+              z-index: 1000;
           `}
           // @ts-ignore
           positionTransition
