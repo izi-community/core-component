@@ -19,6 +19,10 @@ export function getImage(url?: string, size: any = 'SM', mode: string | undefine
     return `https://d20ypkwyl23eqp.cloudfront.net/${url}`;
   }
 
+  if (url.indexOf('certificates') === 0) {
+    return `https://d20ypkwyl23eqp.cloudfront.net/${url}`;
+  }
+
   // for new implementation
   return `${_api}/asset/image/${url}?size=${size}`;
 }
