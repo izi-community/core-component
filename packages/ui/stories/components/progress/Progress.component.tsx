@@ -13,10 +13,21 @@ interface IProgressProps {
 }
 
 export function Progress(props: IProgressProps) {
-  const {stories, classNames} = useStoriesContext();
+  const {stories, classNames, currentIndex} = useStoriesContext();
+  const isVideo = stories?.[currentIndex]?.type === 'video'
 
   return (
-    <div className="flex w-full items-center space-x-3 z-20 lg:py-3 pr-1 pl-1">
+    <div 
+      css={css`
+        ${isVideo ? `
+          position: fixed;
+          background: transparent;
+          top: 0;
+          left: 0;
+          right: 0;
+        ` : ``
+      }
+    `} className="flex w-full items-center space-x-3 z-20 lg:py-3 pr-1 pl-1">
 
       <CloseIcon onClick={props?.onClick}/>
       <div className="flex-1 relative">

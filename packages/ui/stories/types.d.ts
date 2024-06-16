@@ -59,6 +59,9 @@ export interface IStoryContext {
   classNames?: IStoryClassNames;
   direction?: string;
   changeDirection?: (a: string) => void;
+  currentIndex: number;
+  setIsClickPaused?: (a: boolean) => void,
+  isClickPaused?: boolean
 }
 
 export interface IStoryComponentProps {

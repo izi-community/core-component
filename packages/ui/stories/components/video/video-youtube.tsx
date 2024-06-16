@@ -11,6 +11,7 @@ import { useInView } from 'react-intersection-observer';
 import styles from './Video.styles.module.css'
 import {getVideo} from "../../../../../utils/media";
 import Typewriter from "./typewriter";
+import { useStoriesContext } from "../../hooks";
 
 type VideoYoutubeContextProps = {
   media?: any;
@@ -26,6 +27,7 @@ const key = 'RSIsMute';
 const WINDOW: any = typeof window === 'undefined' ? {} : window;
 
 const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeContextProps) => {
+  const { setIsClickPaused, isClickPaused } = useStoriesContext();
 
   const {width, height} = useWindowsResize()
   const [progress, changeProgress] = useState(0);
@@ -35,7 +37,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   const [showLoader, setShowLoader] = useState(false);
   const [isOnUnstarted, changeIsOnUnstarted] = useState(false);
   const [isShowingControls, showingControls] = useState(false);
-  const [blurControlVideo, setBlurControlVideo] = useState(true);
+  const [blurControlVideo, setBlurControlVideo] = useState(false);
   const { ref, inView } = useInView({
     threshold: 0
   });
@@ -126,17 +128,26 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
     }
   }, [orientation, refVideo]);
 
+  const handlePauseVideo = (e: any) => {
+    if (!showLoader) {
+      e.stopPropagation();
+      setBlurControlVideo(!blurControlVideo)
+      props?.effectSounds?.select?.();
+      changeLocalPause(!isLocalPaused)
+      setIsClickPaused(!isClickPaused)
+    }
+  }
+
   return (
     <div
-      onMouseEnter={() => setBlurControlVideo(false)}
-      onMouseLeave={() => setBlurControlVideo(true)}
-      onClick={(e) => {setBlurControlVideo(!blurControlVideo)}}
+      onClick={handlePauseVideo}
       ref={ref}
-      className={`w-full h-full flex items-center justify-center rounded-lg video-frame ${className}`}>
+      className={`w-full h-full flex items-center justify-center rounded-lg video-frame ${className} ${!showLoader ? 'cursor-pointer': ''}`}>
       <div
         css={css`
             video {
-                object-fit: ${orientation === 'landscape' ? 'contain' : 'cover'};
+                // object-fit: ${orientation === 'landscape' ? 'contain' : 'cover'};
+                object-fit: cover;
             }
 
             width: 100%;
@@ -201,6 +212,8 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               onEnded={() => {
                 console.log('onEnded');
                 changeLocalPause(true)
+                setIsClickPaused(true)
+                setBlurControlVideo(true)
               }}
               onBuffer={() => {
                 console.log('onBuffer');
@@ -329,135 +342,193 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
         )
       }
       {
-        (!isShowingControls && !blurControlVideo) && (
-          <div
-            className={`flex z-20 bg-neutral-900 shadow rounded-lg items-center controls absolute left-0 right-0 bottom-[74px] px-4 lg:py-2 py-0.5 mx-4`}>
-            <Button
-              csss={css`
-                  width: 36px;
-                  height: 36px;
-                  background: rgba(255, 255, 255, 0.2);
-                  @media screen and (max-width: 768px) {
-                      width: 30px;
-                      height: 30px;
-                  }
-              `}
-              icon={isLocalPaused ? <PlayCircleOutlined style={{fontSize: 16}} rev={undefined}/> :
-                <PauseOutlined style={{fontSize: 16}} rev={undefined}/>}
-              onClick={(e) => {
-                e.stopPropagation();
-                // props?.onPause?.(!isLocalPaused);
-                props?.effectSounds?.select?.();
-                changeLocalPause(!isLocalPaused)
-              }}
-            >
-            </Button>
-            <Slider
-              className='w-full mx-4 flex-1'
-              max={100}
-              min={0}
-              handleStyle={{
-                height: 8
-              }}
-              onChange={(e: any) => {
-                refVideo?.current?.seekTo?.(e * 0.01);
-                // handleSliderInteractionStart();
-                changeProgress(e * 0.01);
-              }}
-              onChangeComplete={() => {
-                // handleSliderInteractionEnd()
-              }}
-              css={css`
-
-              `}
-              step={1}
-              value={progress * 100}
-            />
-            <Button
-              csss={css`
-                  width: 36px;
-                  height: 36px;
-                  background: transparent;
-
-                  @media screen and (max-width: 768px) {
-                      width: 30px;
-                      height: 30px;
-                  }
-              `}
-              variant="primary"
-              icon={<SoundIcon type={(isLocalMuted) ? 'off' : 'on'}/>}
-              onClick={(e) => {
-                e.stopPropagation();
-                props?.effectSounds?.select?.();
-                props?.setMute?.(!isLocalMuted);
-                changeLocalMuted(!isLocalMuted);
-                WINDOW?.localStorage?.setItem(key, String(!isLocalMuted));
-              }}
-            >
-              {/*{!isMuted ? <i className='fa fa-volume'></i> : <i className='fa fa-volume-mute'></i>}*/}
-            </Button>
-
-            {/*<Dropdown className='ml-3'*/}
-            {/*          overlay={*/}
-            {/*            <Menu>*/}
-            {/*              <Menu.Item onClick={() => handleSpeedChange(0.5)}*/}
-            {/*                         className="text-white font-bold">0.5x</Menu.Item>*/}
-            {/*              <Menu.Item onClick={() => handleSpeedChange(1)} className="text-white font-bold">1x</Menu.Item>*/}
-            {/*              <Menu.Item onClick={() => handleSpeedChange(1.5)}*/}
-            {/*                         className="text-white font-bold">1.5x</Menu.Item>*/}
-            {/*              <Menu.Item onClick={() => handleSpeedChange(2)} className="text-white font-bold">2x</Menu.Item>*/}
-            {/*            </Menu>*/}
-            {/*          }*/}
-            {/*          trigger={['click']}*/}
-            {/*>*/}
-            {/*  <Button>*/}
-            {/*    {translationPlatform('speed')} {playbackRate}x <DownOutlined/>*/}
-            {/*  </Button>*/}
-            {/*</Dropdown>*/}
+        (!isShowingControls) && (
+          <>
+            <div className="flex z-20 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <Button
+                csss={css`
+                    width: 64px;
+                    height: 64px;
+                    background: black;
+                    ${blurControlVideo ? 'opacity: 0.6' : 'opacity: 0' };
+                `}
+                // icon={isLocalPaused ? <PlayCircleOutlined style={{fontSize: 16}} rev={undefined}/> :
+                //   <PauseOutlined style={{fontSize: 16}} rev={undefined}/>}
+                icon={<PlayCircleOutlined style={{fontSize: 32}} rev={undefined}/>}
+                onClick={(e) => {
+                  // props?.onPause?.(!isLocalPaused);
+                }}
+              >
+              </Button>
+            </div>
             {
-              !['video', 'VIDEO_MEDIA'].includes(media?.type ?? '') && (
-                <Button
-                  csss={css`
-                  width: 36px;
-                  height: 36px;
-                  background: transparent;
-                  margin-left: 16px;
-
-                  @media screen and (max-width: 768px) {
-                      width: 30px;
-                      height: 30px;
-                  }
-              `}
-                  variant="primary"
-                  icon={<FullscreenOutlined rev={undefined}/>}
-                  onClick={() => {
-                    let elem = refVideo.current?.player?.player?.player
-                    // if(['video', 'VIDEO_MEDIA'].includes(media?.type ?? '')) {
-                    //   elem = elem?.g;
-                    // }
-                    if (elem) {
-                      showingControls(true)
-                      elem.controls = true;
-                      try {
-                        elem.style.objectFit = 'contain'
-                      } catch (e) {}
-                      setTimeout(() => {
-                        if (elem.requestFullscreen) {
-                          elem.requestFullscreen();
-                        } else if (elem.webkitRequestFullscreen) { /* Safari */
-                          elem.webkitRequestFullscreen();
-                        } else if (elem.msRequestFullscreen) { /* IE11 */
-                          elem.msRequestFullscreen();
-                        }
-                      }, 200)
+              !blurControlVideo && (
+                <div
+                  css={css`
+                    .ant-slider {
+                      margin: 0;
                     }
-                  }}
+                    .ant-slider-track {
+                      background-color: #743cff
+                    }
+                  `}
+                  className="absolute -bottom-1 w-full z-30"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  {/*{!isMuted ? <i className='fa fa-volume'></i> : <i className='fa fa-volume-mute'></i>}*/}
-                </Button>
+                  <Slider
+                    className='w-full'
+                    max={100}
+                    min={0}
+                    handleStyle={{
+                      height: 8
+                    }}
+                    onChange={(e: any) => {
+                      refVideo?.current?.seekTo?.(e * 0.01);
+                      // handleSliderInteractionStart();
+                      changeProgress(e * 0.01);
+                    }}
+                    onChangeComplete={() => {
+                      // handleSliderInteractionEnd()
+                    }}
+                    css={css`
+
+                    `}
+                    step={1}
+                    value={progress * 100}
+                  />
+                </div>
               )
             }
-          </div>
+          </>
+          
+          // <div
+          //   className={`flex z-20 bg-neutral-900 shadow rounded-lg items-center controls absolute left-0 right-0 bottom-[74px] px-4 lg:py-2 py-0.5 mx-4`}>
+          //   <Button
+          //     csss={css`
+          //         width: 36px;
+          //         height: 36px;
+          //         background: rgba(255, 255, 255, 0.2);
+          //         @media screen and (max-width: 768px) {
+          //             width: 30px;
+          //             height: 30px;
+          //         }
+          //     `}
+          //     icon={isLocalPaused ? <PlayCircleOutlined style={{fontSize: 16}} rev={undefined}/> :
+          //       <PauseOutlined style={{fontSize: 16}} rev={undefined}/>}
+          //     onClick={(e) => {
+          //       e.stopPropagation();
+          //       // props?.onPause?.(!isLocalPaused);
+          //       props?.effectSounds?.select?.();
+          //       changeLocalPause(!isLocalPaused)
+          //     }}
+          //   >
+          //   </Button>
+          //   <Slider
+          //     className='w-full mx-4 flex-1'
+          //     max={100}
+          //     min={0}
+          //     handleStyle={{
+          //       height: 8
+          //     }}
+          //     onChange={(e: any) => {
+          //       refVideo?.current?.seekTo?.(e * 0.01);
+          //       // handleSliderInteractionStart();
+          //       changeProgress(e * 0.01);
+          //     }}
+          //     onChangeComplete={() => {
+          //       // handleSliderInteractionEnd()
+          //     }}
+          //     css={css`
+
+          //     `}
+          //     step={1}
+          //     value={progress * 100}
+          //   />
+          //   <Button
+          //     csss={css`
+          //         width: 36px;
+          //         height: 36px;
+          //         background: transparent;
+
+          //         @media screen and (max-width: 768px) {
+          //             width: 30px;
+          //             height: 30px;
+          //         }
+          //     `}
+          //     variant="primary"
+          //     icon={<SoundIcon type={(isLocalMuted) ? 'off' : 'on'}/>}
+          //     onClick={(e) => {
+          //       e.stopPropagation();
+          //       props?.effectSounds?.select?.();
+          //       props?.setMute?.(!isLocalMuted);
+          //       changeLocalMuted(!isLocalMuted);
+          //       WINDOW?.localStorage?.setItem(key, String(!isLocalMuted));
+          //     }}
+          //   >
+          //     {/*{!isMuted ? <i className='fa fa-volume'></i> : <i className='fa fa-volume-mute'></i>}*/}
+          //   </Button>
+
+          //   {/*<Dropdown className='ml-3'*/}
+          //   {/*          overlay={*/}
+          //   {/*            <Menu>*/}
+          //   {/*              <Menu.Item onClick={() => handleSpeedChange(0.5)}*/}
+          //   {/*                         className="text-white font-bold">0.5x</Menu.Item>*/}
+          //   {/*              <Menu.Item onClick={() => handleSpeedChange(1)} className="text-white font-bold">1x</Menu.Item>*/}
+          //   {/*              <Menu.Item onClick={() => handleSpeedChange(1.5)}*/}
+          //   {/*                         className="text-white font-bold">1.5x</Menu.Item>*/}
+          //   {/*              <Menu.Item onClick={() => handleSpeedChange(2)} className="text-white font-bold">2x</Menu.Item>*/}
+          //   {/*            </Menu>*/}
+          //   {/*          }*/}
+          //   {/*          trigger={['click']}*/}
+          //   {/*>*/}
+          //   {/*  <Button>*/}
+          //   {/*    {translationPlatform('speed')} {playbackRate}x <DownOutlined/>*/}
+          //   {/*  </Button>*/}
+          //   {/*</Dropdown>*/}
+          //   {
+          //     !['video', 'VIDEO_MEDIA'].includes(media?.type ?? '') && (
+          //       <Button
+          //         csss={css`
+          //         width: 36px;
+          //         height: 36px;
+          //         background: transparent;
+          //         margin-left: 16px;
+
+          //         @media screen and (max-width: 768px) {
+          //             width: 30px;
+          //             height: 30px;
+          //         }
+          //     `}
+          //         variant="primary"
+          //         icon={<FullscreenOutlined rev={undefined}/>}
+          //         onClick={() => {
+          //           let elem = refVideo.current?.player?.player?.player
+          //           // if(['video', 'VIDEO_MEDIA'].includes(media?.type ?? '')) {
+          //           //   elem = elem?.g;
+          //           // }
+          //           if (elem) {
+          //             showingControls(true)
+          //             elem.controls = true;
+          //             try {
+          //               elem.style.objectFit = 'contain'
+          //             } catch (e) {}
+          //             setTimeout(() => {
+          //               if (elem.requestFullscreen) {
+          //                 elem.requestFullscreen();
+          //               } else if (elem.webkitRequestFullscreen) { /* Safari */
+          //                 elem.webkitRequestFullscreen();
+          //               } else if (elem.msRequestFullscreen) { /* IE11 */
+          //                 elem.msRequestFullscreen();
+          //               }
+          //             }, 200)
+          //           }
+          //         }}
+          //       >
+          //         {/*{!isMuted ? <i className='fa fa-volume'></i> : <i className='fa fa-volume-mute'></i>}*/}
+          //       </Button>
+          //     )
+          //   }
+          // </div>
         )
       }
 
