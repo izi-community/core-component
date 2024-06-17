@@ -8,6 +8,9 @@ const defaultStoryContext: IStoryContext = {
   defaultDuration: 10000,
   isPaused: false,
   direction: '',
+  currentIndex: 0,
+  setIsClickPaused: () => {},
+  isClickPaused: false,
 };
 
 export const StoriesContext = createContext(defaultStoryContext);

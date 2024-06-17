@@ -254,6 +254,7 @@ export default function Stories({
   const firstStoryIndex = 0;
   const lastStoryIndex = stories.length - 1;
   const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [isClickPaused, setIsClickPaused] = useState<boolean>(false);
 
   const hasCalledEndedCb = useRef<any>(false);
   const hasCalledStartedCb = useRef<any>(false);
@@ -404,7 +405,10 @@ export default function Stories({
     isPaused,
     classNames,
     direction,
-    changeDirection: onChangeDirection
+    changeDirection: onChangeDirection,
+    currentIndex,
+    setIsClickPaused,
+    isClickPaused,
   };
 
   if (!selectedStory) {

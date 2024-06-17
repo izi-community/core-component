@@ -549,7 +549,7 @@ html.is-safari body {
 
 
     @media screen and (max-height: 1105px) {
-      $base: adjustPercent($bodyMedium, '-', 26.66);
+      $base: adjustPercent($bodyMedium, '-', 15.625);
       font-size: $base;
       line-height: adjustPercentHeight($base);
     }
@@ -567,7 +567,7 @@ html.is-safari body {
     }
 
     @media screen and (max-height: 764px) {
-      $base: adjustPercent($bodyMedium, '-', 43.75);
+      $base: adjustPercent($bodyMedium, '-', 29.6875);
       font-size: $base;
       line-height: adjustPercentHeight($base);
     }
