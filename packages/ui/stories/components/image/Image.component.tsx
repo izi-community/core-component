@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { IStoryComponentProps } from '../../types';
 import styles from './Image.styles.module.css';
+import {css} from '@emotion/react';
 
 export function Image(props: IStoryComponentProps) {
   useEffect(() => {
@@ -21,6 +22,15 @@ export function Image(props: IStoryComponentProps) {
         className={styles.image}
         src={props.story.url}
         alt="story"
+        css={css`
+            max-height: initial!important;
+            height: auto!important;
+
+            @media screen and (max-width: 768px) {
+                max-height: initial!important;
+                height: auto!important;
+            }
+        `}
         onLoad={handleLoadImage}
       />
       {

@@ -146,8 +146,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
       <div
         css={css`
             video {
-                // object-fit: ${orientation === 'landscape' ? 'contain' : 'cover'};
-                object-fit: cover;
+                 object-fit: ${orientation === 'landscape' ? 'contain' : 'cover'};
             }
 
             width: 100%;
@@ -187,17 +186,16 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               onStart={() => {
                 setTimeout(() => {
                   handleReady()
-                }, 500)
+                }, 1000)
                 if(isOnUnstarted) {
                   changeLocalPause(false)
                   changeIsOnUnstarted(false)
                 }
-                console.log('onStart');
               }}
               onReady={() => {
                 setTimeout(() => {
                   handleReady()
-                }, 500)
+                }, 1000)
                 setShowLoader(true)
                 changeLocalPause(false)
               }}
@@ -206,6 +204,10 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                   changeIsOnUnstarted(true)
                   changeLocalPause(true)
                   setShowLoader(false)
+
+                  setTimeout(() => {
+                    handleReady()
+                  }, 500)
                 }
                 console.log('onError');
               }}
@@ -244,6 +246,9 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                     console.log("onUnstarted")
                     changeIsOnUnstarted(true)
                     changeLocalPause(true)
+                    setTimeout(() => {
+                      handleReady()
+                    }, 500)
                   }
                 },
                 file: {
@@ -400,7 +405,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               )
             }
           </>
-          
+
           // <div
           //   className={`flex z-20 bg-neutral-900 shadow rounded-lg items-center controls absolute left-0 right-0 bottom-[74px] px-4 lg:py-2 py-0.5 mx-4`}>
           //   <Button
