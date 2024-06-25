@@ -44,7 +44,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
 
   const isLocalMutedRef = useRef<boolean>(false);
   const [currentTime, changeCurrentTime] = useState(0)
-  const [orientation, setOrientation] = useState<string>('');
+  const [orientation, setOrientation] = useState<string>('landscape');
 
   const handleReady = () => {
     // Ensure the player is loaded and the underlying video element is accessible
@@ -53,17 +53,10 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
       const videoElement: HTMLVideoElement = player.getInternalPlayer() as HTMLVideoElement;
       const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
 
-      let _o = ''
       if (aspectRatio > 1) {
-        _o = 'landscape';
+        setOrientation('landscape')
       } else if (aspectRatio < 1) {
-        _o  = 'vertical';
-      } else {
-        _o = 'square';
-      }
-
-      if(orientation !== _o) {
-        setOrientation(_o)
+        setOrientation('vertical')
       }
     }
   };
@@ -129,12 +122,17 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   }, [orientation, refVideo]);
 
   const handlePauseVideo = (e: any) => {
-    if (!showLoader) {
+    if (!showLoader && !isOnUnstarted) {
       e.stopPropagation();
       setBlurControlVideo(!blurControlVideo)
       props?.effectSounds?.select?.();
       changeLocalPause(!isLocalPaused)
       setIsClickPaused(!isClickPaused)
+    } else {
+      e.stopPropagation();
+      props?.effectSounds?.select?.();
+      changeLocalPause(!isLocalPaused)
+      changeIsOnUnstarted(false)
     }
   }
 
@@ -142,7 +140,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
     <div
       onClick={handlePauseVideo}
       ref={ref}
-      className={`w-full h-full flex items-center justify-center rounded-lg video-frame ${className} ${!showLoader ? 'cursor-pointer': ''}`}>
+      className={`w-full h-full flex items-center justify-center rounded-lg video-frame animate__animated animate__fadeIn animate__fast ${className} ${!showLoader ? 'cursor-pointer': ''}`}>
       <div
         css={css`
             video {
@@ -329,17 +327,13 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                   z-index: 200;
                   width: 64px;
                   height: 64px;
-                  @media screen and (max-width: 768px) {
-                      width: 48px;
-                      height: 48px;
-                  }
               `}
-              icon={isLocalPaused ? <PlayCircleOutlined style={{fontSize: 24}} rev={undefined}/> :
-                <PauseOutlined style={{fontSize: 24}} rev={undefined}/>}
+              icon={isLocalPaused ? <PlayCircleOutlined style={{fontSize: 32}} rev={undefined}/> :
+                <PauseOutlined style={{fontSize: 32}} rev={undefined}/>}
               onClick={() => {
-                props?.effectSounds?.select?.();
-                changeIsOnUnstarted(false)
-                changeLocalPause(!isLocalPaused)
+                // props?.effectSounds?.select?.();
+                // changeIsOnUnstarted(false)
+                // changeLocalPause(!isLocalPaused)
               }}
             >
             </Button>
@@ -537,7 +531,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
         )
       }
 
-      {showLoader && (
+      {(showLoader && !orientation) && (
         <div className={styles.loaderWrapper}>
           <div className={styles.loader}/>
         </div>
