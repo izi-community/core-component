@@ -8,6 +8,10 @@ export function getImage(url?: string, size: any = 'SM', mode: string | undefine
 
   if (!url) return '';
 
+  if (url.indexOf('https://trainiziprd1.blob.core.windows.net/') === 0) {
+    url = url.replace('https://trainiziprd1.blob.core.windows.net/', 'https://trainizicdn1-chctbadndwa4g3c5.z03.azurefd.net/');
+  }
+
   // for other hosting
   if (url.indexOf('http') == 0 || url.indexOf('https') == 0) return url;
 
@@ -37,6 +41,10 @@ export function getVideo(url?: string) {
   }
 
   if (!url) return '';
+
+  if (url.indexOf('https://trainiziprd1.blob.core.windows.net/') === 0) {
+    url = url.replace('https://trainiziprd1.blob.core.windows.net/', 'https://trainizicdn1-chctbadndwa4g3c5.z03.azurefd.net/');
+  }
 
   if (url.indexOf('api-v2') == 0) return `https://${url}`;
 
