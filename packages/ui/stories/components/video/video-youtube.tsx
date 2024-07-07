@@ -531,7 +531,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
         )
       }
 
-      {(showLoader && !orientation) && (
+      {(showLoader) && (
         <div className={styles.loaderWrapper}>
           <div className={styles.loader}/>
         </div>
