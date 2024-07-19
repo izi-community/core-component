@@ -207,7 +207,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                     handleReady()
                   }, 500)
                 }
-                console.log('onError');
+                console.log('onError', error);
               }}
               onEnded={() => {
                 console.log('onEnded');

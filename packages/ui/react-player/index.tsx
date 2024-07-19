@@ -15,13 +15,22 @@ const ReactPlayer = forwardRef((props: any, ref) => {
     }
   }, [props?.url]);
 
+  const  isSafari = () => {
+    const ua = navigator.userAgent;
+    return /Safari/.test(ua) && !/Chrome|CriOS|Chromium/.test(ua) && /Mac|iPad|iPhone|iPod/.test(ua);
+  }
+
   const getVideoUrl = async () => {
     if(props?.url?.split?.('asset/video/')?.[1]) {
       const res = await axios.get(`${import.meta.env.VITE_API}/asset/video-url/${props?.url?.split?.('asset/video/')?.[1]}`).then((a) => a?.data?.url).catch(() => undefined)
 
       if(res) {
         setUrl(res)
-        setIsHls(containsM3U8(res))
+        if(isSafari()) {
+          setIsHls(false)
+        } else {
+          setIsHls(containsM3U8(res))
+        }
       }
     } else {
       setUrl(props?.url)
