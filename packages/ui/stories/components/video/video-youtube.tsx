@@ -170,7 +170,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                 color: white; /* Text color of the caption */
                 font-size: 1.2em; /* Font size of the caption */
                 padding: 0.2em; /* Padding around the caption text */
-                border-radius: 5px; /* Rounded corners for the caption */
+                border-radius: 5px;
             }
         `}
         className={`${['video', 'VIDEO_MEDIA'].includes(media?.type ?? '') ? 'video-container' : 'player-wrappers'} `}>
