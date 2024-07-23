@@ -2,10 +2,12 @@ import React, { memo, useEffect, useState, forwardRef } from "react";
 import ReactPlayerComponent from "react-player";
 import axios from "axios";
 import * as process from "node:process";
+import {useSearchParams} from "react-router-dom";
 
 const ReactPlayer = forwardRef((props: any, ref) => {
   const [isHls, setIsHls] = useState(false);
   const [url, setUrl] = useState('');
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
 
@@ -26,7 +28,7 @@ const ReactPlayer = forwardRef((props: any, ref) => {
 
       if(res) {
         setUrl(res)
-        if(isSafari()) {
+        if(isSafari() || searchParams.get('iap').toString?.() === 'true') {
           setIsHls(false)
         } else {
           setIsHls(containsM3U8(res))
