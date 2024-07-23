@@ -27,7 +27,7 @@ const ReactPlayer = forwardRef((props: any, ref) => {
 
       if(res) {
         setUrl(res)
-        if(isSafari() || searchParams.get('iap').toString?.() === 'true') {
+        if(isSafari() || (searchParams?.get?.('iap') ?? '').toString?.() === 'true') {
           setIsHls(false)
         } else {
           setIsHls(containsM3U8(res))
