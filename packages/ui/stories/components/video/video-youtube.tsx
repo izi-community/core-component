@@ -6,7 +6,7 @@ import {Slider} from "antd";
 import Button from "../../../button";
 import {PauseOutlined, PlayCircleOutlined,FullscreenOutlined} from "@ant-design/icons";
 import {SoundIcon} from "../soundIcon";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import { useInView } from 'react-intersection-observer';
 import styles from './Video.styles.module.css'
 import {getVideo} from "../../../../../utils/media";
@@ -21,13 +21,14 @@ type VideoYoutubeContextProps = {
   setMute?: any;
   onPause?: any;
   effectSounds?: any;
+  fullScreen?: boolean;
 }
 
 const key = 'RSIsMute';
 const WINDOW: any = typeof window === 'undefined' ? {} : window;
 
 const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeContextProps) => {
-  const { setIsClickPaused, isClickPaused } = useStoriesContext();
+  const { setIsClickPaused, isClickPaused, stories, currentIndex } = useStoriesContext();
 
   const {width, height} = useWindowsResize()
   const [progress, changeProgress] = useState(0);
@@ -44,22 +45,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
 
   const isLocalMutedRef = useRef<boolean>(false);
   const [currentTime, changeCurrentTime] = useState(0)
-  const [orientation, setOrientation] = useState<string>('landscape');
-
-  const handleReady = () => {
-    // Ensure the player is loaded and the underlying video element is accessible
-    const player = refVideo.current;
-    if (player && player.getInternalPlayer()) {
-      const videoElement: HTMLVideoElement = player.getInternalPlayer() as HTMLVideoElement;
-      const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
-
-      if (aspectRatio > 1) {
-        setOrientation('landscape')
-      } else if (aspectRatio < 1) {
-        setOrientation('vertical')
-      }
-    }
-  };
+  const [orientation, setOrientation] = useState<string>('');
 
   const handleProgress = (state: any) => {
     changeCurrentTime(state.playedSeconds);
@@ -136,15 +122,20 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
     }
   }
 
+  const isFullscreenLayout = useMemo(() => props?.fullScreen === true, [props?.fullScreen]);
+
   return (
     <div
       onClick={handlePauseVideo}
       ref={ref}
-      className={`w-full h-full flex items-center justify-center rounded-lg video-frame animate__animated animate__fadeIn animate__fast ${className} ${!showLoader ? 'cursor-pointer': ''}`}>
+      css={css`
+          ${isFullscreenLayout ? `` : `aspect-ratio: ${orientation === 'vertical' ? 4/5 : 16/9};`}
+      `}
+      className={`w-full h-full relative flex items-center justify-center rounded-lg video-frame animate__animated animate__fadeIn animate__fast ${className} ${!showLoader ? 'cursor-pointer': ''}`}>
       <div
         css={css`
             video {
-                 object-fit: ${orientation === 'landscape' ? 'contain' : 'cover'};
+                ${isFullscreenLayout ? `object-fit: ${orientation === 'landscape' ? 'contain' : 'cover'};` : `object-fit: ${orientation === 'vertical' ? 'contain' : 'cover'};`}
             }
 
             width: 100%;
@@ -181,19 +172,17 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               onPause={() => {
                 console.log('onPause');
               }}
+              setOrientation={(e: string) => {
+                setOrientation(e)
+              }}
+
               onStart={() => {
-                setTimeout(() => {
-                  handleReady()
-                }, 1000)
                 if(isOnUnstarted) {
                   changeLocalPause(false)
                   changeIsOnUnstarted(false)
                 }
               }}
               onReady={() => {
-                setTimeout(() => {
-                  handleReady()
-                }, 1000)
                 setShowLoader(true)
                 changeLocalPause(false)
               }}
@@ -202,10 +191,6 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                   changeIsOnUnstarted(true)
                   changeLocalPause(true)
                   setShowLoader(false)
-
-                  setTimeout(() => {
-                    handleReady()
-                  }, 500)
                 }
                 console.log('onError', error);
               }}
@@ -217,9 +202,6 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               }}
               onBuffer={() => {
                 console.log('onBuffer');
-                setTimeout(() => {
-                  handleReady()
-                }, 500)
               }}
               style={{
                 width: '100%',
@@ -244,9 +226,6 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                     console.log("onUnstarted")
                     changeIsOnUnstarted(true)
                     changeLocalPause(true)
-                    setTimeout(() => {
-                      handleReady()
-                    }, 500)
                   }
                 },
                 file: {

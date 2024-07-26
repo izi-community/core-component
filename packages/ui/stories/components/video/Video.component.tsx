@@ -69,6 +69,7 @@ export function Video(props: IStoryComponentProps) {
         }}
         effectSounds={props?.effectSounds}
         setMute={setMute}
+        fullScreen={props?.story?.fullscreen}
         isMuted={isMuted}
         isPaused={isPaused}
         media={{type: props?.story?.payload?.media?.type, url: props.story.url, subtitle: props.story.subtitle, subText: props.story.subText}}

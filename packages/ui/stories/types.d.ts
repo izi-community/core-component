@@ -12,6 +12,7 @@ interface IStoryObject {
   seeMoreComponent?: any;
   onSeeMoreClick?: (storyIndex: number) => void;
   payload?: { [k: string]: any } | undefined;
+  fullscreen?: boolean;
 }
 
 interface IStoryIndexedObject extends IStoryObject {
