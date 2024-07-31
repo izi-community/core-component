@@ -29,7 +29,7 @@ const WINDOW: any = typeof window === 'undefined' ? {} : window;
 
 const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeContextProps) => {
   const { setIsClickPaused, isClickPaused, changeOrientationContext, stories, currentIndex } = useStoriesContext();
-
+  const [showDiv, setShowDiv] = useState<boolean>(false);
   const {width, height} = useWindowsResize()
   const [progress, changeProgress] = useState(0);
   const refVideo: any = useRef();
@@ -46,10 +46,35 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   const isLocalMutedRef = useRef<boolean>(false);
   const [currentTime, changeCurrentTime] = useState(0)
   const [orientation, setOrientation] = useState<string>('');
+  const timerRef: any = useRef<undefined>();
 
   const handleProgress = (state: any) => {
     changeCurrentTime(state.playedSeconds);
   };
+
+  useEffect(() => {
+    if(orientation !== 'vertical') return
+    document.addEventListener('touchstart', resetTimer);
+    startTimer();
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      document.removeEventListener('touchstart', resetTimer);
+    };
+  }, [orientation]);
+
+  function startTimer() {
+    timerRef.current = setTimeout(() => setShowDiv(true), 3000);
+  }
+
+  function resetTimer() {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    setShowDiv(false);
+    startTimer();
+  }
 
   useEffect(() => {
     isLocalMutedRef.current = isLocalMuted
@@ -516,6 +541,13 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
           <div className={styles.loader}/>
         </div>
       )}
+      {
+        (showDiv) && (
+          <div className="z-40 absolute pointer-events-none select-none lg:bottom-16 bottom-8 left-0 right-0 overflow-y-auto overflow-x-auto justify-center flex items-center">
+            <img src="/icons/slide-animation-swipe.gif" className="w-16 h-16 object-contain" />
+          </div>
+        )
+      }
     </div>
   )
 }
