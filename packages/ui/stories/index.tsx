@@ -63,7 +63,8 @@ const StoryWrapper = ({
                         storiesWithIndex,
                         isPaused,
                         selectedStory,
-                        currentIndex
+                        currentIndex,
+                        screenPaddingClass
                       }: {
   handleNextClick: any,
   handlePrevClick: any,
@@ -83,6 +84,7 @@ const StoryWrapper = ({
 
   return (
     <Story
+      screenPaddingClass={screenPaddingClass}
       effectSounds={effectSounds}
       disabledNext={isRunningAnimation}
       key={selectedStory.index}
@@ -237,6 +239,7 @@ export default function Stories({
                                   onCloseCallback = () => {},
                                   onInit = () => {},
                                   actions = [],
+                                  screenPaddingClass,
                                 }: IStoryProps): JSX.Element | null {
   const {mode} = useMobile()
   const [searchParams] = useSearchParams();
@@ -249,6 +252,7 @@ export default function Stories({
   >();
 
   const [direction, changeDirection] = useState<string>('')
+  const [orientation, changeOrientation] = useState<any>('')
   const selectedStoryRef = useRef<IStoryIndexedObject | undefined>()
   const disabledNextRef = useRef<boolean | undefined>()
   const firstStoryIndex = 0;
@@ -293,6 +297,7 @@ export default function Stories({
     if (story) {
       selectedStoryRef.current = story
       setSelectedStory(story);
+      _changeOrientation('')
     }
   }, [currentIndex, stories]);
 
@@ -397,6 +402,10 @@ export default function Stories({
     changeDirection(a)
   }
 
+  const _changeOrientation = (a: string) => {
+    changeOrientation(a)
+  }
+
   const contextValue: IStoryContext = {
     stories: storiesWithIndex,
     width,
@@ -409,6 +418,8 @@ export default function Stories({
     currentIndex,
     setIsClickPaused,
     isClickPaused,
+    changeOrientationContext: _changeOrientation,
+    orientation,
   };
 
   if (!selectedStory) {
@@ -432,6 +443,7 @@ export default function Stories({
           <Progress actions={actions} onClick={onCloseCallback} activeStoryIndex={selectedStory.index} isPaused={isPaused}/>
 
           <StoryWrapper
+            screenPaddingClass={screenPaddingClass}
             defaultDuration={defaultDuration}
             disabledNext={disabledNext}
             onAllStoriesEnd={onAllStoriesEnd}

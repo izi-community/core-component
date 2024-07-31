@@ -69,7 +69,7 @@ const ReactPlayer = forwardRef((props: any, ref: any) => {
 
     setTimeout(() => {
       handleReady()
-    }, 500)
+    }, 80)
   };
 
   const playerProps = {
@@ -96,7 +96,7 @@ const ReactPlayer = forwardRef((props: any, ref: any) => {
           props.config?.youtube?.onUnstarted?.()
           setTimeout(() => {
             handleReady()
-          }, 500)
+          }, 80)
         }
       },
       file: {
@@ -108,19 +108,19 @@ const ReactPlayer = forwardRef((props: any, ref: any) => {
       props?.onStart?.();
       setTimeout(() => {
         handleReady()
-      }, 1000)
+      }, 80)
     },
     onReady: () => {
       props?.onReady?.();
       setTimeout(() => {
         handleReady()
-      }, 1000)
+      }, 80)
     },
     onBuffer: () => {
       props?.onBuffer?.();
       setTimeout(() => {
         handleReady()
-      }, 500)
+      }, 80)
     }
   };
 

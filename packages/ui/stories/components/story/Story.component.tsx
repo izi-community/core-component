@@ -11,7 +11,7 @@ import * as hooks from '../../hooks';
 
 export function Story(props: IStoryComponentProps) {
   const [showSeeMoreComponent, setShowSeeMoreComponent] = useState(false);
-  const { classNames, direction } = hooks.useStoriesContext();
+  const { classNames, orientation, direction } = hooks.useStoriesContext();
 
   useEffect(() => {
     setShowSeeMoreComponent(false);
@@ -22,10 +22,10 @@ export function Story(props: IStoryComponentProps) {
       return <Image {...props} />;
     }
     if (props.story.type === CONSTANTS.STORY_TYPES.VIDEO) {
-      return <Video {...props} />;
+      return <Video orientation={orientation} screenPaddingClass={props.screenPaddingClass} {...props} />;
     }
     if (props.story.type === CONSTANTS.STORY_TYPES.COMPONENT) {
-      return <CustomComponent {...props} />;
+      return <CustomComponent orientation={orientation} screenPaddingClass={props.screenPaddingClass} {...props} />;
     }
 
     return null;

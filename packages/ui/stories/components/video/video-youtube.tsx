@@ -28,7 +28,7 @@ const key = 'RSIsMute';
 const WINDOW: any = typeof window === 'undefined' ? {} : window;
 
 const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeContextProps) => {
-  const { setIsClickPaused, isClickPaused, stories, currentIndex } = useStoriesContext();
+  const { setIsClickPaused, isClickPaused, changeOrientationContext, stories, currentIndex } = useStoriesContext();
 
   const {width, height} = useWindowsResize()
   const [progress, changeProgress] = useState(0);
@@ -129,7 +129,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
       onClick={handlePauseVideo}
       ref={ref}
       css={css`
-          ${isFullscreenLayout ? `` : `aspect-ratio: ${orientation === 'vertical' ? 4/5 : 16/9};`}
+          ${isFullscreenLayout ? `` : `aspect-ratio: ${orientation === 'vertical' ? 9/16 : 16/9};`}
       `}
       className={`w-full h-full relative flex items-center justify-center rounded-lg video-frame animate__animated animate__fadeIn animate__fast ${className} ${!showLoader ? 'cursor-pointer': ''}`}>
       <div
@@ -174,6 +174,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               }}
               setOrientation={(e: string) => {
                 setOrientation(e)
+                changeOrientationContext(e)
               }}
 
               onStart={() => {

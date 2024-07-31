@@ -46,6 +46,7 @@ export function CustomComponent(props: IStoryComponentProps) {
     box: 'border-box',
   })
 
+
   useEffect(() => {
     if (props.disabledNext) {
       clearTimeout(refTimeout.current);
@@ -79,14 +80,18 @@ export function CustomComponent(props: IStoryComponentProps) {
         story={props.story}
         isPaused={props.isPaused}
         className={`animate__animated ${isRunningAnimation}`}
+        screenPaddingClass={props?.screenPaddingClass}
+        orientation={props?.orientation}
       />
-      {React.Children.map((props.children), (child) => {
+      {React.Children.map((props.children), (child, idx) => {
         if (!React.isValidElement(child)) {
           return child;
         }
 
         return React.cloneElement(child, {
           height: Math.max(elementHeight, elementHeight2),
+          orientation: props?.orientation,
+          screenPaddingClass: (Array.isArray(props.children) && (props.children ?? []).length - 1 === idx) ? props?.screenPaddingClass : ''
         } as any);
       })}
     </div>

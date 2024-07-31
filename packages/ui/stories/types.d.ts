@@ -49,6 +49,7 @@ export interface IStoryProps {
   onCloseCallback?: () => void;
   onInit: (args: any) => void;
   actions?: ReactNode[];
+  screenPaddingClass?: string
 }
 
 export interface IStoryContext {
@@ -63,6 +64,8 @@ export interface IStoryContext {
   currentIndex: number;
   setIsClickPaused?: (a: boolean) => void,
   isClickPaused?: boolean
+  orientation?: string,
+  changeOrientationContext: (a: string) => void,
 }
 
 export interface IStoryComponentProps {
@@ -71,6 +74,8 @@ export interface IStoryComponentProps {
   onResume: () => void;
   isPaused: boolean;
   disabledNext?: string;
+  screenPaddingClass?: string;
+  orientation?: string;
   children: ReactNode;
   effectSounds?: {
     select?: () => void;

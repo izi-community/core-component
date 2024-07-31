@@ -13,11 +13,11 @@ interface IProgressProps {
 }
 
 export function Progress(props: IProgressProps) {
-  const {stories, classNames, currentIndex} = useStoriesContext();
-  const isVideo = stories?.[currentIndex]?.type === 'video'
+  const {stories, orientation, classNames, currentIndex, setIsClickPaused} = useStoriesContext();
+  const isVideo = stories?.[currentIndex]?.type === 'video' || orientation === 'vertical'
 
   return (
-    <div 
+    <div
       css={css`
         ${isVideo ? `
           position: fixed;
