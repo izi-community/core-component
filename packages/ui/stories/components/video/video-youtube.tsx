@@ -65,7 +65,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   }, [orientation]);
 
   function startTimer() {
-    timerRef.current = setTimeout(() => setShowDiv(true), 3000);
+    timerRef.current = setTimeout(() => setShowDiv(true), 2000);
   }
 
   function resetTimer() {
@@ -542,9 +542,44 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
         </div>
       )}
       {
-        (showDiv) && (
-          <div className="z-40 absolute pointer-events-none select-none lg:bottom-16 bottom-8 left-0 right-0 overflow-y-auto overflow-x-auto justify-center flex items-center">
-            <img src="/icons/slide-animation-swipe.gif" className="w-16 h-16 object-contain" />
+        (showDiv && stories?.[currentIndex]?.type !== 'video') && (
+          <div
+            className="z-40 absolute pointer-events-none select-none lg:bottom-16 bottom-8 left-0 right-0 justify-center flex items-center"
+            css={css`
+              .scroll {
+                position: relative;
+                animation: down 2.5s infinite;
+                -webkit-animation: down 2.5s infinite;
+              }
+
+              @keyframes down {
+                0% {
+                  transform: translate(0);
+                }
+                20% {
+                  transform: translateY(-15px);
+                }
+                40% {
+                  transform: translate(0);
+                }
+              }
+
+              @-webkit-keyframes down {
+                0% {
+                  transform: translate(0);
+                }
+                20% {
+                  transform: translateY(15px);
+                }
+                40% {
+                  transform: translate(0);
+                }
+              }
+          `}
+          >
+            <div className="scroll">
+              <img src="/icons/swipe-up.png" className="w-10 h-10 object-contain" />
+            </div>
           </div>
         )
       }
