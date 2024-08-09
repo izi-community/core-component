@@ -536,6 +536,38 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
         )
       }
 
+      {orientation === 'landscape' && (
+        <div
+          className="flex items-center z-50 absolute left-1/2 top-[72%] md:top-[67%] -translate-x-1/2 bg-neutral-200/50 px-3 py-2 rounded-full hover:bg-neutral-200/50"
+          onClick={(e) => {
+            e.stopPropagation()
+            e.defaultPrevented
+            let elem = refVideo.current?.player?.player?.player
+            if (elem) { 
+              showingControls(true)
+              elem.controls = true;
+              try {
+                elem.style.objectFit = 'contain'
+              } catch (e) {}
+              setTimeout(() => {
+                if (elem.requestFullscreen) {
+                  elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) { /* Safari */
+                  elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) { /* IE11 */
+                  elem.msRequestFullscreen();
+                }
+              }, 200)
+            }
+          }}
+        >
+          <div>
+            <FullscreenOutlined rev={undefined} className="mr-2"/>
+          </div>
+          <div className="text-sm text-black opacity-75">Full screen</div>
+        </div>
+      )}
+
       {(showLoader) && (
         <div className={styles.loaderWrapper}>
           <div className={styles.loader}/>
