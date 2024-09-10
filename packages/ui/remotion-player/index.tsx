@@ -223,7 +223,7 @@ const RemotionPlayer: React.FC<{ data: VideoData, playing: boolean, muted: boole
     const preloadAssets = async () => {
       const imagePromises = (data.frames ?? [])?.slice(0, 1).map(frame => preloadImage(frame.url));
       try {
-        await Promise.all([...imagePromises]);
+        await Promise.all([...imagePromises, preloadAudio(data?.audioUrl)]);
         setIsLoading(false);
       } catch (error) {
         console.error('Error preloading assets:', error);
@@ -271,7 +271,11 @@ const RemotionPlayer: React.FC<{ data: VideoData, playing: boolean, muted: boole
     }
 
     refVideo.current = playerRef.current
-    playerRef.current?.seekTo?.(0)
+
+    setTimeout(() => {
+      playerRef.current?.seekTo?.(0)
+    }, 500)
+
     const _onPlay: CallbackListener<'play'> = () => {
       console.log('play');
       setIsPlaying(true)
@@ -317,8 +321,6 @@ const RemotionPlayer: React.FC<{ data: VideoData, playing: boolean, muted: boole
   if (error) {
     return <ErrorDisplay message={error} />;
   }
-
-  if(isLoading) return <div>Loading...</div>
 
   return (
     <div className="w-full h-full relative">

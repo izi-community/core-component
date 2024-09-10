@@ -16,6 +16,10 @@ html.is-safari body {
     line-height: inherit!important;
     text-align: left!important;
     font-family: inherit!important;
+    ol {
+      list-style-position: inside!important;
+      list-style-type: disc!important;
+    }
   }
 }
 
@@ -23,6 +27,10 @@ html.is-safari body {
   &:not(.header):not(.learn-more--id) {
     font-size: inherit!important;
     font-family: inherit!important;
+    ol {
+      list-style-position: inside!important;
+      list-style-type: disc!important;
+    }
   }
 }
 
