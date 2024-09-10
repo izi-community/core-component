@@ -12,6 +12,7 @@ import styles from './Video.styles.module.css'
 import {getVideo} from "../../../../../utils/media";
 import Typewriter from "./typewriter";
 import { useStoriesContext } from "../../hooks";
+import VideoRemotionComponentPlayer from "../../../remotion-player";
 
 type VideoYoutubeContextProps = {
   media?: any;
@@ -192,105 +193,126 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
         className={`${['video', 'VIDEO_MEDIA'].includes(media?.type ?? '') ? 'video-container' : 'player-wrappers'} `}>
         {
           inView && (
-            <ReactPlayer
-              className={`${!['video', 'VIDEO_MEDIA'].includes(media?.type ?? '') ? 'w-full h-full' : 'react-player'}  player-custom`}
-              onPause={() => {
-                console.log('onPause');
-              }}
-              setOrientation={(e: string) => {
-                setOrientation(e)
-                changeOrientationContext(e)
-              }}
+            <>
+              {
+                ['video', 'VIDEO_MEDIA'].includes(media?.type) && (
+                  <ReactPlayer
+                    className={`${!['video', 'VIDEO_MEDIA'].includes(media?.type ?? '') ? 'w-full h-full' : 'react-player'}  player-custom`}
+                    onPause={() => {
+                      console.log('onPause');
+                    }}
+                    setOrientation={(e: string) => {
+                      setOrientation(e)
+                      changeOrientationContext(e)
+                    }}
 
-              onStart={() => {
-                if(isOnUnstarted) {
-                  changeLocalPause(false)
-                  changeIsOnUnstarted(false)
-                }
-              }}
-              onReady={() => {
-                setShowLoader(true)
-                changeLocalPause(false)
-              }}
-              onError={(error: any) => {
-                if(error?.name === 'NotAllowedError') {
-                  changeIsOnUnstarted(true)
-                  changeLocalPause(true)
-                  setShowLoader(false)
-                }
-                console.log('onError', error);
-              }}
-              onEnded={() => {
-                console.log('onEnded');
-                changeLocalPause(true)
-                setIsClickPaused(true)
-                setBlurControlVideo(true)
-              }}
-              onBuffer={() => {
-                console.log('onBuffer');
-              }}
-              style={{
-                width: '100%',
-                height: '100%',
-              }}
-              ref={refVideo}
-              width="100%"
-              height="100%"
-              config={{
-                youtube: {
-                  embedOptions: {
-                    allowFullScreen: 'allowfullscreen',
-                    allow:"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share;fullscreen;"
-                  },
-                  playerVars: {
-                    showinfo: 1,
-                    playsinline: 1,
-                    allowFullScreen: 'allowfullscreen',
-                    allow:"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share;fullscreen;"
-                  },
-                  onUnstarted: () => {
-                    console.log("onUnstarted")
-                    changeIsOnUnstarted(true)
-                    changeLocalPause(true)
-                  }
-                },
-                file: {
-                  attributes: {
-                  },
-                  // tracks: [
-                  //   {
-                  //     kind: "subtitles",
-                  //     src: media?.subtitle,
-                  //     srcLang: "en",
-                  //     default: true,
-                  //     label: "English"
-                  //   },
-                  // ]
-                },
-              }}
-              progressInterval={100}
-              onProgress={(e: any) => {
-                if ((e?.played ?? 0) > 0) {
-                  setShowLoader(false)
-                }
+                    onStart={() => {
+                      if(isOnUnstarted) {
+                        changeLocalPause(false)
+                        changeIsOnUnstarted(false)
+                      }
+                    }}
+                    onReady={() => {
+                      setShowLoader(true)
+                      changeLocalPause(false)
+                    }}
+                    onError={(error: any) => {
+                      if(error?.name === 'NotAllowedError') {
+                        changeIsOnUnstarted(true)
+                        changeLocalPause(true)
+                        setShowLoader(false)
+                      }
+                      console.log('onError', error);
+                    }}
+                    onEnded={() => {
+                      console.log('onEnded');
+                      changeLocalPause(true)
+                      setIsClickPaused(true)
+                      setBlurControlVideo(true)
+                    }}
+                    onBuffer={() => {
+                      console.log('onBuffer');
+                    }}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                    }}
+                    ref={refVideo}
+                    width="100%"
+                    height="100%"
+                    config={{
+                      youtube: {
+                        embedOptions: {
+                          allowFullScreen: 'allowfullscreen',
+                          allow:"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share;fullscreen;"
+                        },
+                        playerVars: {
+                          showinfo: 1,
+                          playsinline: 1,
+                          allowFullScreen: 'allowfullscreen',
+                          allow:"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share;fullscreen;"
+                        },
+                        onUnstarted: () => {
+                          console.log("onUnstarted")
+                          changeIsOnUnstarted(true)
+                          changeLocalPause(true)
+                        }
+                      },
+                      file: {
+                        attributes: {
+                        },
+                        // tracks: [
+                        //   {
+                        //     kind: "subtitles",
+                        //     src: media?.subtitle,
+                        //     srcLang: "en",
+                        //     default: true,
+                        //     label: "English"
+                        //   },
+                        // ]
+                      },
+                    }}
+                    progressInterval={100}
+                    onProgress={(e: any) => {
+                      if ((e?.played ?? 0) > 0) {
+                        setShowLoader(false)
+                      }
 
-                changeProgress(e?.played ?? 0);
-                handleProgress(e)
-              }}
+                      changeProgress(e?.played ?? 0);
+                      handleProgress(e)
+                    }}
 
-              muted={isLocalMuted}
-              controls={isShowingControls && blurControlVideo}
-              loop={false}
-              playing={!isLocalPaused}
-              onClickPreview={() => {
-              }}
-              playsinline={true}
-              url={
-                ['video', 'VIDEO_MEDIA'].includes(media?.type ?? '')
-                  ? `https://www.youtube.com/watch?v=${getYouTubeID(media?.url)}`
-                  : getVideo(media?.url)
+                    muted={isLocalMuted}
+                    controls={isShowingControls && blurControlVideo}
+                    loop={false}
+                    playing={!isLocalPaused}
+                    onClickPreview={() => {
+                    }}
+                    playsinline={true}
+                    url={
+                      ['video', 'VIDEO_MEDIA'].includes(media?.type ?? '')
+                        ? `https://www.youtube.com/watch?v=${getYouTubeID(media?.url)}`
+                        : getVideo(media?.url)
+                    }
+                  />
+                )
               }
-            />
+
+              {
+                media?.type === 'VIDEO_REMOTION_MEDIA' && (
+                  <VideoRemotionComponentPlayer
+                    muted={isLocalMuted}
+                    playing={!isLocalPaused}
+                    onPlay={() => {
+                      changeLocalPause(false)
+                      changeIsOnUnstarted(false)
+                      setShowLoader(false)
+                    }}
+                    refVideo={refVideo}
+                    data={media?.data}/>
+                )
+              }
+            </>
           )
         }
         {/*{*/}
@@ -366,9 +388,12 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               </Button>
             </div>
             {
-              !blurControlVideo && (
-                <div
-                  css={css`
+              ['video', 'VIDEO_MEDIA'].includes(media?.type) && (
+                <>
+                  {
+                    !blurControlVideo && (
+                      <div
+                        css={css`
                     .ant-slider {
                       margin: 0;
                     }
@@ -376,31 +401,34 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                       background-color: #743cff
                     }
                   `}
-                  className="absolute -bottom-1 w-full z-30"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Slider
-                    className='w-full'
-                    max={100}
-                    min={0}
-                    handleStyle={{
-                      height: 8
-                    }}
-                    onChange={(e: any) => {
-                      refVideo?.current?.seekTo?.(e * 0.01);
-                      // handleSliderInteractionStart();
-                      changeProgress(e * 0.01);
-                    }}
-                    onChangeComplete={() => {
-                      // handleSliderInteractionEnd()
-                    }}
-                    css={css`
+                        className="absolute -bottom-1 w-full z-30"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Slider
+                          className='w-full'
+                          max={100}
+                          min={0}
+                          handleStyle={{
+                            height: 8
+                          }}
+                          onChange={(e: any) => {
+                            refVideo?.current?.seekTo?.(e * 0.01);
+                            // handleSliderInteractionStart();
+                            changeProgress(e * 0.01);
+                          }}
+                          onChangeComplete={() => {
+                            // handleSliderInteractionEnd()
+                          }}
+                          css={css`
 
                     `}
-                    step={1}
-                    value={progress * 100}
-                  />
-                </div>
+                          step={1}
+                          value={progress * 100}
+                        />
+                      </div>
+                    )
+                  }
+                </>
               )
             }
           </>

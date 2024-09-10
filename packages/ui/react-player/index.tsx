@@ -75,6 +75,7 @@ const ReactPlayer = forwardRef((props: any, ref: any) => {
   const playerProps = {
     ...(props ?? {}),
     ref,
+    url,
     onError: handleError,
     config: {
       ...props.config,
