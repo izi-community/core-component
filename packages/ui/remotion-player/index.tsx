@@ -143,7 +143,7 @@ const VideoFrame: React.FC<{ frameData: Frame; }> = ({ frameData}) => {
           objectFit: 'cover',
           objectPosition: 'center',
           transform: `scale(${scale})`,
-          opacity,
+          opacity: 1,
         }}
       />
     </AbsoluteFill>
@@ -196,21 +196,37 @@ const VideoComposition: React.FC<{ data: VideoData }> = ({ data }) => {
 };
 
 const GifOverlay: React.FC = () => {
+  const [size, setSize] = useState(460);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+      const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+      const smallerDimension = Math.min(vw, vh);
+      setSize(Math.max(smallerDimension * 0.4, 200)); // 40% of smaller dimension, minimum 200px
+    };
+
+    handleResize(); // Set initial size
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+
   return (
     <AbsoluteFill style={{ zIndex: 2 }}> {/* Increased z-index, but below subtitle */}
       <div
         style={{
           position: 'absolute',
-          width: '460px',
-          height: '460px',
-          bottom: -80,
+          width: `${size}px`,
+          height: `${size}px`,
+          bottom: `-${size * 0.15}px`, // Adjust bottom position based on size
           right: 0,
           opacity: 1,
         }}
       >
         <Gif
-          width={460}
-          height={460}
+          width={size}
+          height={size}
           src="https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/teachizi/background/bot.gif"
           style={{
             width: '100%',
