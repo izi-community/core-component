@@ -33,10 +33,10 @@ const ReactPlayer = forwardRef((props: any, ref: any) => {
     }
   };
 
-  const  isSafari = () => {
-    const ua = navigator.userAgent;
-    return /Safari/.test(ua) && !/Chrome|CriOS|Chromium/.test(ua) && /Mac|iPad|iPhone|iPod/.test(ua);
-  }
+  const isAppleMobileDevice = () => {
+    const ua = navigator.userAgent.toLowerCase();
+    return /iphone|ipad|ipod/.test(ua);
+  };
 
   const getVideoUrl = async () => {
     if(props?.url?.split?.('asset/video/')?.[1]) {
@@ -44,7 +44,7 @@ const ReactPlayer = forwardRef((props: any, ref: any) => {
 
       if(res) {
         setUrl(res)
-        if(isSafari() || (searchParams?.get?.('iap') ?? '').toString?.() === 'true') {
+        if(isAppleMobileDevice() || (searchParams?.get?.('iap') ?? '').toString?.() === 'true') {
           setIsHls(false)
         } else {
           setIsHls(containsM3U8(res))
@@ -126,7 +126,7 @@ const ReactPlayer = forwardRef((props: any, ref: any) => {
   };
 
   return url ? (
-    <ReactPlayerComponent {...playerProps} />
+    <ReactPlayerComponent {...playerProps} playsinline/>
   ) : <div/>;
 });
 
