@@ -8,30 +8,14 @@ import {
   useVideoConfig,
   Img,
   interpolate,
-  Easing
+  Easing,
+  prefetch
 } from 'remotion';
 import { Gif } from '@remotion/gif';
 import { useInView } from 'react-intersection-observer';
 import isEqual from 'lodash/isEqual';
 import useWindowsResize from "../../hook/use-windows-resize";
-
-const preloadImage = (src: string) => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(src);
-    img.onerror = reject;
-    img.src = src;
-  });
-};
-
-const preloadAudio = (src: string) => {
-  return new Promise((resolve, reject) => {
-    const audio = new Audio(src);
-    audio.oncanplaythrough = () => resolve(src);
-    audio.onerror = reject;
-    audio.load();
-  });
-};
+import {preloadImage, preloadAudio, preloadVideo} from '@remotion/preload'
 
 interface Frame {
   start_time: number;
@@ -132,6 +116,8 @@ const VideoFrame: React.FC<{ frameData: Frame; }> = ({ frameData}) => {
     }
   );
 
+  console.log("AA")
+
   return (
     <AbsoluteFill style={{ background: '#fff' }}>
       <Img
@@ -146,6 +132,8 @@ const VideoFrame: React.FC<{ frameData: Frame; }> = ({ frameData}) => {
           opacity: 1,
         }}
       />
+      <SubtitleOverlay text={frameData.text} />
+      <AudioRemotion playsInline src={frameData.audioUrl} />
     </AbsoluteFill>
   );
 };
@@ -172,7 +160,6 @@ const SubtitleOverlay: React.FC<{ text: string }> = ({ text }) => {
 
 const VideoComposition: React.FC<{ data: VideoData }> = ({ data }) => {
   const { fps } = useVideoConfig();
-
   return (
     <AbsoluteFill>
       <Series>
@@ -182,9 +169,6 @@ const VideoComposition: React.FC<{ data: VideoData }> = ({ data }) => {
           return (
             <Series.Sequence durationInFrames={frameDuration} key={index}>
               <VideoFrame frameData={frameData} />
-              <SubtitleOverlay text={frameData.text} />
-              <AudioRemotion
-                             endAt={frameDuration} src={frameData.audioUrl} />
             </Series.Sequence>
           );
         })}
@@ -258,45 +242,33 @@ const RemotionPlayer: React.FC<{ data: VideoData, playing: boolean, muted: boole
   const [error, setError] = useState<string | null>(null);
   const totalDuration = data.frames[data.frames.length - 1].end_time;
   const {width, height} = useWindowsResize()
-
   const playerRef = React.useRef<PlayerRef>(null);
   const dataRef = useRef<any>(null);
 
-  const [preloadedAssets, setPreloadedAssets] = useState<string[]>([]);
-
   useEffect(() => {
     const preloadAssets = async () => {
-      const allAssets = (data.frames ?? []).flatMap(frame => [frame.url, frame.audioUrl]);
-      // @ts-ignore
-      const uniqueAssets = [...new Set(allAssets)].filter(Boolean); // Filter out any null or undefined values
-      const assetsToLoad = uniqueAssets.filter(asset => !preloadedAssets.includes(asset));
-
-      if (assetsToLoad.length === 0) {
-        setIsLoading(false);
-        return;
-      }
-
-      const imagePromises = assetsToLoad.filter(asset => asset.match(/\.(jpeg|jpg|gif|png)$/i)).map(preloadImage);
-      const audioPromises = assetsToLoad.filter(asset => asset.match(/\.(mp3|wav|ogg)$/i)).map(preloadAudio);
-
       try {
-        const loadedAssets = await Promise.all([...imagePromises, ...audioPromises]);
-        setPreloadedAssets((prev: any) => [...prev, ...loadedAssets]);
+        setIsLoading(true);
+        const imagePreloads = data.frames.map(frame => preloadImage(frame.url));
+        const audioPreloads = data.frames.map(frame => preloadAudio(frame.audioUrl));
+        const backgroundMusicPreload = preloadAudio(data.musicUrl);
+
+        await Promise.all([...imagePreloads, ...audioPreloads, backgroundMusicPreload]);
+
         setIsLoading(false);
-        onPlay?.()
-      } catch (error) {
-        console.error('Error preloading assets:', error);
+        onPlay?.();
+      } catch (err) {
+        console.error('Error preloading assets:', err);
         setError('Failed to load video assets. Please check your connection and try again.');
         setIsLoading(false);
       }
     };
 
     if (!isEqual(dataRef.current, data.videoId)) {
-      setIsLoading(true);
       preloadAssets();
       dataRef.current = data.videoId;
     }
-  }, [data.frames, data.videoId, preloadedAssets]);
+  }, [data, onPlay]);
 
   useEffect(() => {
     if(playerRef.current) {
@@ -414,25 +386,25 @@ export const RemotionThumbnail: React.FC<{ data: VideoData }> = ({ data }) => {
 
   const dataRef = useRef<any>(null);
 
-  useEffect(() => {
-    const preloadAssets = async () => {
-      const imagePromises = (data.frames ?? [])?.slice(0, 1).map(frame => preloadImage(frame.url));
-      try {
-        await Promise.all([...imagePromises]);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error preloading assets:', error);
-        setError('Failed to load video assets. Please check your connection and try again.');
-        setIsLoading(false);
-      }
-    };
-
-    if(!isEqual(dataRef?.current, data)) {
-      preloadAssets();
-      console.log("VA OAOAO")
-      dataRef.current = data
-    }
-  }, [data]);
+  // useEffect(() => {
+  //   const preloadAssets = async () => {
+  //     // const imagePromises = (data.frames ?? [])?.slice(0, 1).map(frame => preloadImage(frame.url));
+  //     try {
+  //       await Promise.all([...imagePromises]);
+  //       setIsLoading(false);
+  //     } catch (error) {
+  //       console.error('Error preloading assets:', error);
+  //       setError('Failed to load video assets. Please check your connection and try again.');
+  //       setIsLoading(false);
+  //     }
+  //   };
+  //
+  //   if(!isEqual(dataRef?.current, data)) {
+  //     preloadAssets();
+  //     console.log("VA OAOAO")
+  //     dataRef.current = data
+  //   }
+  // }, [data]);
 
   if (isLoading) {
     return (

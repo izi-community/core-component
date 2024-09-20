@@ -195,7 +195,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
           inView && (
             <>
               {
-                ['video', 'VIDEO_MEDIA'].includes(media?.type) && (
+                ['video', 'VIDEO_MEDIA', "VIDEO_UPLOAD_MEDIA"].includes(media?.type) && (
                   <ReactPlayer
                     className={`${!['video', 'VIDEO_MEDIA'].includes(media?.type ?? '') ? 'w-full h-full' : 'react-player'}  player-custom`}
                     onPause={() => {
@@ -261,6 +261,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                       file: {
                         attributes: {
                         },
+
                         // tracks: [
                         //   {
                         //     kind: "subtitles",
@@ -388,7 +389,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               </Button>
             </div>
             {
-              ['video', 'VIDEO_MEDIA'].includes(media?.type) && (
+              ['video', 'VIDEO_MEDIA', "VIDEO_UPLOAD_MEDIA"].includes(media?.type) && (
                 <>
                   {
                     !blurControlVideo && (
