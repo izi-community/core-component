@@ -72,6 +72,7 @@ export function Video(props: IStoryComponentProps) {
         fullScreen={props?.story?.fullscreen}
         isMuted={isMuted}
         isPaused={isPaused}
+        indexSlide={props?.story?.index}
         media={{type: props?.story?.payload?.media?.type, data: props?.story?.payload?.media?.data, url: props.story.url, subtitle: props.story.subtitle, subText: props.story.subText}}
       />
       {/*<div className={styles.soundIcon} onClick={() => setMute(!isMuted)}>*/}

@@ -23,6 +23,7 @@ type VideoYoutubeContextProps = {
   onPause?: any;
   effectSounds?: any;
   fullScreen?: boolean;
+  indexSlide?: number;
 }
 
 const key = 'RSIsMute';
@@ -35,7 +36,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   const [progress, changeProgress] = useState(0);
   const refVideo: any = useRef();
   const [isLocalMuted,  changeLocalMuted] = useState(WINDOW?.localStorage?.getItem(key) === 'true')
-  const [isLocalPaused,  changeLocalPause] = useState(true)
+  const [isLocalPaused,  changeLocalPause] = useState(false)
   const [showLoader, setShowLoader] = useState(false);
   const [isOnUnstarted, changeIsOnUnstarted] = useState(false);
   const [isShowingControls, showingControls] = useState(false);
@@ -43,6 +44,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   const { ref, inView } = useInView({
     threshold: 0
   });
+  const isLocalPausedRef = useRef<boolean>(null);
 
   const isLocalMutedRef = useRef<boolean>(false);
   const [currentTime, changeCurrentTime] = useState(0)
@@ -83,11 +85,12 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
 
   useEffect(() => {
     if(inView) {
-      changeLocalPause(false)
+      console.log("aaaa", props?.indexSlide)
+      changeLocalPause(props?.indexSlide === 0)
     } else {
       changeLocalPause(true)
     }
-  }, [inView]);
+  }, [inView, props?.indexSlide]);
 
   useEffect(() => {
     if(media?.url) {
@@ -303,11 +306,23 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                 media?.type === 'VIDEO_REMOTION_MEDIA' && (
                   <VideoRemotionComponentPlayer
                     muted={isLocalMuted}
+                    autoPlay={props?.indexSlide !== 0}
                     playing={!isLocalPaused}
-                    onPlay={() => {
-                      changeLocalPause(false)
-                      changeIsOnUnstarted(false)
+                    onPlay={(e: any) => {
                       setShowLoader(false)
+                      if(e === true && !isLocalPausedRef.current && props?.indexSlide === 0) {
+                        isLocalPausedRef.current = true
+                        changeIsOnUnstarted(true)
+                        changeLocalPause(true)
+                        return
+                      }
+                      if(e) {
+                        changeLocalPause(false)
+                        changeIsOnUnstarted(false)
+                      } else {
+                        changeLocalPause(true)
+                        changeIsOnUnstarted(true)
+                      }
                     }}
                     refVideo={refVideo}
                     data={media?.data}/>

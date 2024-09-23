@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CallbackListener, Player, PlayerRef, Thumbnail } from '@remotion/player';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {CallbackListener, Player, PlayerRef, RenderLoading, Thumbnail} from '@remotion/player';
 import {
   AbsoluteFill,
   Series,
@@ -9,13 +9,65 @@ import {
   Img,
   interpolate,
   Easing,
-  prefetch
+  prefetch,
 } from 'remotion';
-import { Gif } from '@remotion/gif';
-import { useInView } from 'react-intersection-observer';
-import isEqual from 'lodash/isEqual';
+import {Gif} from '@remotion/gif';
+import {useInView} from 'react-intersection-observer';
 import useWindowsResize from "../../hook/use-windows-resize";
-import {preloadImage, preloadAudio, preloadVideo} from '@remotion/preload'
+
+const audioCache = new Map();
+
+const useOptimizedAudioProcessing = (fps: number) => {
+  const audioContext = useRef<AudioContext | null>(null);
+
+  const memoizedProcessAudio = useMemo(() => {
+    const processAudioInner = async (audioUrl: string, duration: number) => {
+      if (!audioContext.current) {
+        audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+
+      const cacheKey = `${audioUrl}`;
+
+      if (audioCache.has(cacheKey)) {
+        const cachedData = audioCache.get(cacheKey)!;
+        return {
+          ttsDuration: cachedData.duration,
+          ttsDurationInFrames: Math.ceil(cachedData.duration * fps),
+          audioUrl: cachedData.url,
+        };
+      }
+
+      try {
+        const audioData: any = {
+          url: audioUrl,
+          duration: duration,
+        }
+
+        audioCache.set(cacheKey, audioData);
+
+        return {
+          ttsDuration: audioData.duration,
+          ttsDurationInFrames: Math.ceil(audioData.duration * fps),
+          audioUrl: audioData.url,
+        };
+      } catch (error) {
+        console.error('Error processing audio:', error);
+        throw error;
+      }
+    };
+
+    return processAudioInner;
+  }, [fps]);
+
+  return useCallback(memoizedProcessAudio, [memoizedProcessAudio]);
+};
+
+export const getTTSAudioUrl = async (url = '', duration = 10) => {
+  return {
+    url: url,
+    duration: duration,
+  };
+}
 
 interface Frame {
   start_time: number;
@@ -43,9 +95,9 @@ const calculateTransitionDuration = (frameDuration: number): number => {
   return Math.min(Math.max(transitionDuration, MIN_TRANSITION_DURATION), MAX_TRANSITION_DURATION);
 };
 
-const EnterpriseText: React.FC<{ text: string }> = ({ text }) => {
+const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const {fps} = useVideoConfig();
 
   const words = text.split(' ');
 
@@ -89,9 +141,9 @@ const EnterpriseText: React.FC<{ text: string }> = ({ text }) => {
   );
 };
 
-const VideoFrame: React.FC<{ frameData: Frame; }> = ({ frameData}) => {
+const VideoFrame: React.FC<{ frameData: Frame; }> = ({frameData}) => {
   const frame = useCurrentFrame();
-  const { durationInFrames } = useVideoConfig();
+  const {durationInFrames, fps} = useVideoConfig();
 
   const progress = interpolate(
     frame,
@@ -116,10 +168,8 @@ const VideoFrame: React.FC<{ frameData: Frame; }> = ({ frameData}) => {
     }
   );
 
-  console.log("AA")
-
   return (
-    <AbsoluteFill style={{ background: '#fff' }}>
+    <AbsoluteFill style={{background: '#fff'}}>
       <Img
         src={frameData.url}
         alt={frameData.text}
@@ -132,13 +182,13 @@ const VideoFrame: React.FC<{ frameData: Frame; }> = ({ frameData}) => {
           opacity: 1,
         }}
       />
-      <SubtitleOverlay text={frameData.text} />
-      <AudioRemotion playsInline src={frameData.audioUrl} />
+      <SubtitleOverlay text={frameData.text}/>
+      <AudioRemotion playsInline src={frameData.audioUrl}/>
     </AbsoluteFill>
   );
 };
 
-const SubtitleOverlay: React.FC<{ text: string }> = ({ text }) => {
+const SubtitleOverlay: React.FC<{ text: string }> = ({text}) => {
   return (
     <AbsoluteFill
       style={{
@@ -153,28 +203,116 @@ const SubtitleOverlay: React.FC<{ text: string }> = ({ text }) => {
 
       }}
     >
-      <EnterpriseText text={text} />
+      <EnterpriseText text={text}/>
     </AbsoluteFill>
   );
 };
 
-const VideoComposition: React.FC<{ data: VideoData }> = ({ data }) => {
-  const { fps } = useVideoConfig();
+const LoadingOverlay: React.FC = () => (
+  <AbsoluteFill
+    style={{
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+    }}
+  >
+    <div
+      style={{
+        color: 'white',
+        fontSize: '24px',
+        textAlign: 'center',
+      }}
+    >
+      <div
+        style={{
+          width: '50px',
+          height: '50px',
+          border: '3px solid #fff',
+          borderTop: '3px solid #3498db',
+          borderRadius: '50%',
+          margin: '0 auto 20px',
+          animation: 'spin 1s linear infinite',
+        }}
+      />
+      <LoadingSpinner/>
+    </div>
+  </AbsoluteFill>
+);
+
+
+const VideoComposition: React.FC<{
+  data: VideoData,
+  isLoading?: boolean;
+  callback: (a: any, fps: any, totalDuration?: number, ) => void;
+}> = ({data, callback, isLoading}) => {
+  const transitionDuration = 10
+  const {fps} = useVideoConfig();
+  const [frameDurations, setFrameDurations] = useState<any[]>([]);
+  const processAudio = useOptimizedAudioProcessing(fps);
+
+  useEffect(() => {
+    const calculateFrameDurations = async () => {
+      const durations = await Promise.all(
+        (data?.frames ?? []).flatMap(async (item, index) => {
+          let duration: number;
+          const {
+            ttsDuration,
+            ttsDurationInFrames,
+            audioUrl
+          } = await processAudio(item?.audioUrl, item?.end_time - item?.start_time);
+
+          duration = ttsDurationInFrames;
+
+          const frames: any = [];
+
+          frames.push({duration, item, audioUrl, id: index});
+
+          if (index < (data.frames ?? []).length - 1) {
+            frames[frames.length - 1].duration += transitionDuration;
+          }
+
+          return frames;
+        })
+      );
+
+      const flattenedDurations = durations.flat();
+      const sortedDurations = flattenedDurations.sort((a, b) => {
+        const aId = typeof a.id === 'string' ? parseInt(a.id.split('-')[0]) : a.id;
+        const bId = typeof b.id === 'string' ? parseInt(b.id.split('-')[0]) : b.id;
+        return aId - bId;
+      });
+
+      let currentFrame = 0;
+      const frameDurationsWithStart = sortedDurations.map(({duration, item, id, audioUrl}) => {
+        const startFrame = currentFrame;
+        currentFrame += duration;
+        return {startFrame, duration, item, id, audioUrl};
+      });
+
+      setFrameDurations(frameDurationsWithStart);
+
+      // Calculate total duration
+      const totalDuration = frameDurationsWithStart.reduce((sum, {duration}) => sum + duration, 0);
+
+      callback?.(frameDurationsWithStart, fps, totalDuration);
+    };
+
+    calculateFrameDurations();
+  }, [data.frames, fps, processAudio]);
+
   return (
     <AbsoluteFill>
       <Series>
-        {data.frames.map((frameData, index) => {
-          const frameDuration = Math.round((frameData.end_time - frameData.start_time) * fps);
-
-          return (
-            <Series.Sequence durationInFrames={frameDuration} key={index}>
-              <VideoFrame frameData={frameData} />
-            </Series.Sequence>
-          );
-        })}
+        {frameDurations.map(({duration, startFrame, item, audioUrl}, index) => (
+          <Series.Sequence key={item.id} durationInFrames={duration}>
+            <VideoFrame frameData={item}/>
+          </Series.Sequence>
+        ))}
       </Series>
-      <GifOverlay />
-      <AudioRemotion src={data.musicUrl} volume={0.5} />
+      <GifOverlay/>
+      <AudioRemotion loop src={data.musicUrl} volume={0.5}/>
     </AbsoluteFill>
   );
 };
@@ -197,7 +335,7 @@ const GifOverlay: React.FC = () => {
 
 
   return (
-    <AbsoluteFill style={{ zIndex: 2 }}> {/* Increased z-index, but below subtitle */}
+    <AbsoluteFill style={{zIndex: 2}}> {/* Increased z-index, but below subtitle */}
       <div
         style={{
           position: 'absolute',
@@ -230,59 +368,44 @@ const LoadingSpinner: React.FC = () => (
   </div>
 );
 
-const ErrorDisplay: React.FC<{ message: string }> = ({ message }) => (
+const ErrorDisplay: React.FC<{ message: string }> = ({message}) => (
   <div className="w-full h-full flex items-center justify-center bg-red-100 text-red-800 p-4">
     <p>{message}</p>
   </div>
 );
 
-const RemotionPlayer: React.FC<{ data: VideoData, playing: boolean, muted: boolean, refVideo: any, onPlay: () => void, onPause: () => void, onEnded: () => void }> = ({ data, muted = false, playing, refVideo, onPlay, onEnded, onPause }) => {
+const RemotionPlayer: React.FC<{
+  data: VideoData,
+  playing: boolean,
+  autoPlay: boolean,
+  muted: boolean,
+  refVideo: any,
+  onPlay: (s: boolean) => void,
+  onPause: (s: boolean) => void,
+  onEnded: (s: boolean) => void
+}> = ({data, muted = false, playing, autoPlay = false, refVideo, onPlay, onEnded, onPause}) => {
+
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const totalDuration = data.frames[data.frames.length - 1].end_time;
   const {width, height} = useWindowsResize()
   const playerRef = React.useRef<PlayerRef>(null);
-  const dataRef = useRef<any>(null);
-
-  useEffect(() => {
-    const preloadAssets = async () => {
-      try {
-        setIsLoading(true);
-        const imagePreloads = data.frames.map(frame => preloadImage(frame.url));
-        const audioPreloads = data.frames.map(frame => preloadAudio(frame.audioUrl));
-        const backgroundMusicPreload = preloadAudio(data.musicUrl);
-
-        await Promise.all([...imagePreloads, ...audioPreloads, backgroundMusicPreload]);
-
-        setIsLoading(false);
-        onPlay?.();
-      } catch (err) {
-        console.error('Error preloading assets:', err);
-        setError('Failed to load video assets. Please check your connection and try again.');
-        setIsLoading(false);
-      }
-    };
-
-    if (!isEqual(dataRef.current, data.videoId)) {
-      preloadAssets();
-      dataRef.current = data.videoId;
-    }
-  }, [data, onPlay]);
+  const autoPlayRef = useRef<any>(null);
 
   useEffect(() => {
     if(playerRef.current) {
       if(playing) {
         playerRef.current.play?.()
-      } else {
+      } else if(playerRef.current.isPlaying?.()) {
         playerRef.current.pause?.()
       }
     }
   }, [playing, playerRef]);
 
   useEffect(() => {
-    if(playerRef.current) {
-      if(!muted) {
+    if (playerRef.current) {
+      if (!muted) {
         playerRef.current.setVolume(1)
       } else {
         playerRef.current.setVolume(0)
@@ -301,24 +424,23 @@ const RemotionPlayer: React.FC<{ data: VideoData, playing: boolean, muted: boole
       return;
     }
 
-    console.log("VAO DAY", playerRef.current);
 
     const _onPlay: CallbackListener<'play'> = () => {
       console.log('play');
       setIsPlaying(true)
-      onPlay?.()
+      onPlay?.(true)
     };
 
     const _onPause: CallbackListener<'pause'> = () => {
       console.log('pausing');
       setIsPlaying(false)
-      onPause?.()
+      onPause?.(false)
     };
 
     const _onEnded: CallbackListener<'ended'> = () => {
       console.log('ended');
       setIsPlaying(false)
-      onEnded?.()
+      onEnded?.(false)
     };
 
     playerRef.current.addEventListener('play', _onPlay);
@@ -331,22 +453,23 @@ const RemotionPlayer: React.FC<{ data: VideoData, playing: boolean, muted: boole
         playerRef.current.removeEventListener('play', _onPlay);
         playerRef.current.removeEventListener('pause', _onPause);
         playerRef.current.removeEventListener('ended', _onEnded);
+        autoPlayRef.current = false
         setIsPlaying(false)
       }
     };
   }, [data.videoId, playerRef.current, isLoading]);
 
-  if (isLoading) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-800 font-semibold">
-
-      </div>
-    );
-  }
-
   if (error) {
-    return <ErrorDisplay message={error} />;
+    return <ErrorDisplay message={error}/>;
   }
+
+  const renderLoading: RenderLoading = useCallback(({height, width}) => {
+    return (
+      <AbsoluteFill style={{backgroundColor: 'gray'}}>
+        ...
+      </AbsoluteFill>
+    );
+  }, []);
 
   return (
     <div className="w-full h-full relative">
@@ -354,10 +477,19 @@ const RemotionPlayer: React.FC<{ data: VideoData, playing: boolean, muted: boole
         initiallyMuted={muted}
         ref={playerRef}
         component={VideoComposition}
-        inputProps={{ data }}
-        durationInFrames={Math.round(totalDuration * 30)}
-        compositionWidth={parseInt(String(width))}
-        compositionHeight={parseInt(String(height))}
+        inputProps={{
+          data,
+          isLoading,
+          callback: () => {
+            console.log("DONE")
+            setIsLoading(false);
+            onPlay?.(true);
+          }
+        }}
+        numberOfSharedAudioTags={data.frames.length}
+        durationInFrames={Math.round(totalDuration * 30) ?? 1}
+        compositionWidth={parseInt(String(width)) || 720}
+        compositionHeight={parseInt(String(height)) || 1080}
         fps={30}
         style={{
           width: '100%',
@@ -366,19 +498,22 @@ const RemotionPlayer: React.FC<{ data: VideoData, playing: boolean, muted: boole
           overflow: 'hidden'
         }}
         controls={false}
-        autoPlay={true}
         loop={false}
         clickToPlay={false}
         spaceKeyToPlayOrPause={false}
         allowFullscreen
-        errorFallback={({ error }) => <ErrorDisplay message={error.message} />}
+        renderLoading={renderLoading}
+        errorFallback={({error}) => {
+
+          return <ErrorDisplay message={error.message}/>
+        }}
       />
     </div>
   );
 };
 
 
-export const RemotionThumbnail: React.FC<{ data: VideoData }> = ({ data }) => {
+export const RemotionThumbnail: React.FC<{ data: VideoData }> = ({data}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const totalDuration = data.frames[data.frames.length - 1].end_time;
@@ -409,21 +544,21 @@ export const RemotionThumbnail: React.FC<{ data: VideoData }> = ({ data }) => {
   if (isLoading) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-800 font-semibold">
-        <LoadingSpinner />
+        <LoadingSpinner/>
         <p className="ml-4">Loading training module...</p>
       </div>
     );
   }
 
   if (error) {
-    return <ErrorDisplay message={error} />;
+    return <ErrorDisplay message={error}/>;
   }
 
   return (
     <div className="w-full h-full relative scale-125">
       <Thumbnail
         component={VideoComposition}
-        inputProps={{ data }}
+        inputProps={{data, callback: () => {}}}
         durationInFrames={Math.round(totalDuration * 30)}
         compositionWidth={width}
         compositionHeight={height}
@@ -440,19 +575,24 @@ export const RemotionThumbnail: React.FC<{ data: VideoData }> = ({ data }) => {
   );
 };
 
-const VideoRemotionComponentPlayer = ({data = {}, playing = true, muted = false, refVideo, onPlay = () => {}, onPause=  () => {}, onEnded = () => {}}: any) => {
-  const { ref, inView } = useInView({
+const VideoRemotionComponentPlayer = ({
+                                        data = {}, playing = true, autoPlay = false, muted = false, refVideo, onPlay = () => {
+  }, onPause = () => {
+  }, onEnded = () => {
+  }
+                                      }: any) => {
+  const {ref, inView} = useInView({
     threshold: 0
   });
 
-  if(!data?.videoId) return <div/>
-
+  if (!data?.videoId) return <div/>
 
   return (
     <div className="w-full h-full" ref={ref}>
       {
         inView && (
-          <RemotionPlayer muted={muted} playing={playing} refVideo={refVideo} data={data} onPlay={onPlay} onPause={onPause} onEnded={onEnded}/>
+          <RemotionPlayer autoPlay={autoPlay} muted={muted} playing={playing} refVideo={refVideo} data={data} onPlay={onPlay}
+                          onPause={onPause} onEnded={onEnded}/>
         )
       }
     </div>
@@ -461,12 +601,12 @@ const VideoRemotionComponentPlayer = ({data = {}, playing = true, muted = false,
 
 export const VideoRemotionComponentThumbnail = ({videoObject = {}}: any) => {
   const data: any = JSON.parse(videoObject?.frames ?? '{}');
-  if(!data?.videoId) return <div/>
+  if (!data?.videoId) return <div/>
 
 
   return (
     <div className="w-full h-full">
-      <RemotionThumbnail data={data} />
+      <RemotionThumbnail data={data}/>
     </div>
   );
 };
