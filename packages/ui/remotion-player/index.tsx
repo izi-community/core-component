@@ -10,10 +10,82 @@ import {
   interpolate,
   Easing,
   prefetch,
+  cancelRender, continueRender, delayRender,
 } from 'remotion';
 import {Gif} from '@remotion/gif';
 import {useInView} from 'react-intersection-observer';
 import useWindowsResize from "../../hook/use-windows-resize";
+
+import { Lottie, LottieAnimationData } from "@remotion/lottie";
+
+const LottieCharacterRemotion = ({url}: {url: string}) => {
+  const [handle] = useState(() => delayRender(""));
+
+  const [animationData, setAnimationData] =
+    useState<LottieAnimationData | null>(null);
+
+  useEffect(() => {
+    fetch(url)
+      .then((data) => data.json())
+      .then((json) => {
+        setAnimationData(json);
+        continueRender(handle);
+      })
+      .catch((err) => {
+        cancelRender(err);
+      });
+  }, [handle, url]);
+
+  if (!animationData) {
+    return null;
+  }
+
+  return <Lottie loop animationData={animationData} />;
+};
+
+const imageCache = new Map<string, HTMLImageElement>();
+
+const useImagePreloader = (imageSources: string[]) => {
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadImage = async (src: string) => {
+      if (imageCache.has(src)) {
+        return imageCache.get(src);
+      }
+
+      return new Promise<void>((resolve, reject) => {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+          imageCache.set(src, img);
+          resolve();
+        };
+        img.onerror = () => reject(src);
+      });
+    };
+
+    Promise.all(imageSources.map(loadImage))
+      .then(() => {
+        if (isMounted) {
+          setImagesLoaded(true);
+        }
+      })
+      .catch((errorSrc) => {
+        if (isMounted) {
+          setErrors((prevErrors) => [...prevErrors, errorSrc]);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [imageSources]);
+
+  return { imagesLoaded, errors };
+};
 
 const audioCache = new Map();
 
@@ -252,6 +324,9 @@ const VideoComposition: React.FC<{
   const [frameDurations, setFrameDurations] = useState<any[]>([]);
   const processAudio = useOptimizedAudioProcessing(fps);
 
+  const imageUrls = data.frames.map(frame => frame.url);
+  const { imagesLoaded, errors } = useImagePreloader(imageUrls);
+
   useEffect(() => {
     const calculateFrameDurations = async () => {
       const durations = await Promise.all(
@@ -302,6 +377,10 @@ const VideoComposition: React.FC<{
     calculateFrameDurations();
   }, [data.frames, fps, processAudio]);
 
+  if (!imagesLoaded) {
+    return <LoadingOverlay />;
+  }
+
   return (
     <AbsoluteFill>
       <Series>
@@ -325,7 +404,7 @@ const GifOverlay: React.FC = () => {
       const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
       const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
       const smallerDimension = Math.min(vw, vh);
-      setSize(Math.max(smallerDimension * 0.4, 200)); // 40% of smaller dimension, minimum 200px
+      setSize(Math.max(smallerDimension * 0.5, 200)); // 40% of smaller dimension, minimum 200px
     };
 
     handleResize(); // Set initial size
@@ -341,21 +420,12 @@ const GifOverlay: React.FC = () => {
           position: 'absolute',
           width: `${size}px`,
           height: `${size}px`,
-          bottom: `-${size * 0.15}px`, // Adjust bottom position based on size
-          right: 0,
+          bottom: `-${size * 0.35}px`,
+          right: `-${size * 0.2}px`,
           opacity: 1,
         }}
       >
-        <Gif
-          width={size}
-          height={size}
-          src="https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/teachizi/background/bot.gif"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain'
-          }}
-        />
+        <LottieCharacterRemotion url={`https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/teachizi/background/male_1.json`}/>
       </div>
     </AbsoluteFill>
   );
