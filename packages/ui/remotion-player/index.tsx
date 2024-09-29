@@ -9,14 +9,13 @@ import {
   Img,
   interpolate,
   Easing,
-  prefetch,
   cancelRender, continueRender, delayRender,
 } from 'remotion';
-import {Gif} from '@remotion/gif';
 import {useInView} from 'react-intersection-observer';
 import useWindowsResize from "../../hook/use-windows-resize";
 
 import { Lottie, LottieAnimationData } from "@remotion/lottie";
+import {isEqual} from "lodash";
 
 const LottieCharacterRemotion = ({url}: {url: string}) => {
   const [handle] = useState(() => delayRender(""));
@@ -43,54 +42,64 @@ const LottieCharacterRemotion = ({url}: {url: string}) => {
   return <Lottie loop animationData={animationData} />;
 };
 
+/* useImageCache*/
+
 const imageCache = new Map<string, HTMLImageElement>();
 
 const useImagePreloader = (imageSources: string[]) => {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const imageSourcesRef = useRef<string[]>([]);
 
   useEffect(() => {
     let isMounted = true;
-    const loadImage = async (src: string) => {
-      if (imageCache.has(src)) {
-        return imageCache.get(src);
-      }
-
-      return new Promise<void>((resolve, reject) => {
-        const img = new Image();
-        img.src = src;
-        img.onload = () => {
-          imageCache.set(src, img);
-          resolve();
-        };
-        img.onerror = () => reject(src);
-      });
-    };
-
-    Promise.all(imageSources.map(loadImage))
-      .then(() => {
-        if (isMounted) {
-          setImagesLoaded(true);
+    if(!isEqual(imageSourcesRef.current, imageSources)) {
+      setImagesLoaded(false);
+      imageSourcesRef.current = [...imageSources]
+      const loadImage = async (src: string) => {
+        if (imageCache.has(src)) {
+          return imageCache.get(src);
         }
-      })
-      .catch((errorSrc) => {
-        if (isMounted) {
-          setErrors((prevErrors) => [...prevErrors, errorSrc]);
-        }
-      });
+
+        return new Promise<void>((resolve, reject) => {
+          const img = new Image();
+          img.src = src;
+          img.onload = () => {
+            imageCache.set(src, img);
+            resolve();
+          };
+          img.onerror = () => reject(src);
+        });
+      };
+      Promise.all(imageSources.map(loadImage))
+        .then(() => {
+          if (isMounted) {
+            setImagesLoaded(true);
+          }
+        })
+        .catch((errorSrc) => {
+          if (isMounted) {
+            setErrors((prevErrors) => [...prevErrors, errorSrc]);
+          }
+        });
+    } else {
+      setImagesLoaded(true);
+    }
 
     return () => {
       isMounted = false;
     };
-  }, [imageSources]);
+  }, [imageSources, imagesLoaded]);
 
   return { imagesLoaded, errors };
 };
 
-const audioCache = new Map();
+/*useAudioCache*/
 
+const audioCache = new Map();
 const useOptimizedAudioProcessing = (fps: number) => {
   const audioContext = useRef<AudioContext | null>(null);
+  const BUFFER_DURATION = 0.1; // 100ms buffer
 
   const memoizedProcessAudio = useMemo(() => {
     const processAudioInner = async (audioUrl: string, duration: number) => {
@@ -98,22 +107,28 @@ const useOptimizedAudioProcessing = (fps: number) => {
         audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
 
-      const cacheKey = `${audioUrl}`;
+      const cacheKey = audioUrl;
 
       if (audioCache.has(cacheKey)) {
-        const cachedData = audioCache.get(cacheKey)!;
+        const cachedData = audioCache.get(cacheKey);
         return {
           ttsDuration: cachedData.duration,
-          ttsDurationInFrames: Math.ceil(cachedData.duration * fps),
+          ttsDurationInFrames: Math.ceil((cachedData.duration + BUFFER_DURATION) * fps),
           audioUrl: cachedData.url,
+          audioBuffer: cachedData.buffer,
         };
       }
 
       try {
-        const audioData: any = {
+        const response = await fetch(audioUrl);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioContext.current.decodeAudioData(arrayBuffer);
+
+        const audioData = {
           url: audioUrl,
-          duration: duration,
-        }
+          duration: Math.max(duration, audioBuffer.duration) + BUFFER_DURATION,
+          buffer: audioBuffer,
+        };
 
         audioCache.set(cacheKey, audioData);
 
@@ -121,6 +136,7 @@ const useOptimizedAudioProcessing = (fps: number) => {
           ttsDuration: audioData.duration,
           ttsDurationInFrames: Math.ceil(audioData.duration * fps),
           audioUrl: audioData.url,
+          audioBuffer: audioData.buffer,
         };
       } catch (error) {
         console.error('Error processing audio:', error);
@@ -131,8 +147,17 @@ const useOptimizedAudioProcessing = (fps: number) => {
     return processAudioInner;
   }, [fps]);
 
-  return useCallback(memoizedProcessAudio, [memoizedProcessAudio]);
+  const preloadAudio = useCallback(async (audioUrls: string[]) => {
+    const preloadPromises = audioUrls.map(url => memoizedProcessAudio(url, 0));
+    await Promise.all(preloadPromises);
+  }, [memoizedProcessAudio]);
+
+  return {
+    processAudio: useCallback(memoizedProcessAudio, [memoizedProcessAudio]),
+    preloadAudio,
+  };
 };
+
 
 export const getTTSAudioUrl = async (url = '', duration = 10) => {
   return {
@@ -141,31 +166,30 @@ export const getTTSAudioUrl = async (url = '', duration = 10) => {
   };
 }
 
+
 interface Frame {
-  start_time: number;
-  end_time: number;
+  start_time?: number;
+  end_time?: number;
+  duration?: number;
   url: string;
   text: string;
   type: string;
   audioUrl: string;
 }
 
-interface VideoData {
-  videoId: string;
+export interface VideoConfigRemotion {
+  avatar: boolean;
+  avatarTemplate: string;
+  voice: string;
   musicUrl: string;
-  frames: Frame[];
 }
 
-const MIN_TRANSITION_DURATION = 15; // Minimum transition duration in frames
-const MAX_TRANSITION_DURATION = 15; // Maximum transition duration in frames
-
-const calculateTransitionDuration = (frameDuration: number): number => {
-  // Calculate 10% of the frame duration
-  const transitionDuration = Math.round(frameDuration * 0.1);
-
-  // Clamp the value between MIN_TRANSITION_DURATION and MAX_TRANSITION_DURATION
-  return Math.min(Math.max(transitionDuration, MIN_TRANSITION_DURATION), MAX_TRANSITION_DURATION);
-};
+interface VideoData {
+  videoId: string;
+  musicUrl?: string;
+  frames: Frame[];
+  videoConfig?: VideoConfigRemotion;
+}
 
 const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
   const frame = useCurrentFrame();
@@ -213,9 +237,9 @@ const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
   );
 };
 
-const VideoFrame: React.FC<{ frameData: Frame; }> = ({frameData}) => {
+const VideoFrame: React.FC<{ frameData: Frame; videoConfig?: VideoConfigRemotion;}> = ({frameData, videoConfig = undefined}) => {
   const frame = useCurrentFrame();
-  const {durationInFrames, fps} = useVideoConfig();
+  const { fps, durationInFrames } = useVideoConfig();
 
   const progress = interpolate(
     frame,
@@ -227,13 +251,12 @@ const VideoFrame: React.FC<{ frameData: Frame; }> = ({frameData}) => {
     }
   );
 
-  const scale = interpolate(progress, [0, 1], [1.2, 1]);
+  const scale = interpolate(progress, [0, 1], [1.4, 1]);
 
-  // Smooth opacity transition for both fade-in and fade-out
   const opacity = interpolate(
     progress,
-    [0, 0.1, 0.9, 1],  // Four keyframes for smoother transition
-    [0, 1, 1, 0.3],      // Corresponding opacity values
+    [0, 0.1, 0.7, 1],
+    [0.3, 1, 1, 0.3],
     {
       extrapolateLeft: 'clamp',
       extrapolateRight: 'clamp',
@@ -241,7 +264,7 @@ const VideoFrame: React.FC<{ frameData: Frame; }> = ({frameData}) => {
   );
 
   return (
-    <AbsoluteFill style={{background: '#fff'}}>
+    <AbsoluteFill style={{ background: '#000' }}>
       <Img
         src={frameData.url}
         alt={frameData.text}
@@ -251,11 +274,15 @@ const VideoFrame: React.FC<{ frameData: Frame; }> = ({frameData}) => {
           objectFit: 'cover',
           objectPosition: 'center',
           transform: `scale(${scale})`,
-          opacity: 1,
+          opacity: opacity,
         }}
       />
-      <SubtitleOverlay text={frameData.text}/>
-      <AudioRemotion playsInline src={frameData.audioUrl}/>
+      <SubtitleOverlay text={frameData.text} />
+      {
+        videoConfig?.avatarTemplate && (
+          <GifOverlay videoConfig={videoConfig} />
+        )
+      }
     </AbsoluteFill>
   );
 };
@@ -319,99 +346,102 @@ const VideoComposition: React.FC<{
   isLoading?: boolean;
   callback: (a: any, fps: any, totalDuration?: number, ) => void;
 }> = ({data, callback, isLoading}) => {
-  const transitionDuration = 10
+  const transitionDuration = 20;
   const {fps} = useVideoConfig();
+  const frame = useCurrentFrame();
   const [frameDurations, setFrameDurations] = useState<any[]>([]);
-  const processAudio = useOptimizedAudioProcessing(fps);
+  const {processAudio} = useOptimizedAudioProcessing(fps);
+  const prevDataRef = useRef<VideoData['frames']>();
 
   const imageUrls = data.frames.map(frame => frame.url);
   const { imagesLoaded, errors } = useImagePreloader(imageUrls);
 
+  const memoizedProcessAudio = useCallback(processAudio, [fps]);
+
   useEffect(() => {
     const calculateFrameDurations = async () => {
+      if (isEqual(data.frames, prevDataRef.current)) {
+        return; // Data hasn't changed, no need to recalculate
+      }
+
       const durations = await Promise.all(
-        (data?.frames ?? []).flatMap(async (item, index) => {
-          let duration: number;
+        (data?.frames ?? []).map(async (item, index) => {
           const {
-            ttsDuration,
             ttsDurationInFrames,
-            audioUrl
-          } = await processAudio(item?.audioUrl, item?.end_time - item?.start_time);
+            audioUrl,
+            ttsDuration
+          } = await memoizedProcessAudio(item?.audioUrl, item?.duration ?? ((item?.end_time ?? 0) - (item?.start_time ?? 0)));
 
-          duration = ttsDurationInFrames;
+          const duration = ttsDurationInFrames + transitionDuration;
 
-          const frames: any = [];
-
-          frames.push({duration, item, audioUrl, id: index});
-
-          if (index < (data.frames ?? []).length - 1) {
-            frames[frames.length - 1].duration += transitionDuration;
-          }
-
-          return frames;
+          return {duration, item, audioUrl, id: index, audioDuration: ttsDuration};
         })
       );
 
-      const flattenedDurations = durations.flat();
-      const sortedDurations = flattenedDurations.sort((a, b) => {
-        const aId = typeof a.id === 'string' ? parseInt(a.id.split('-')[0]) : a.id;
-        const bId = typeof b.id === 'string' ? parseInt(b.id.split('-')[0]) : b.id;
-        return aId - bId;
-      });
-
       let currentFrame = 0;
-      const frameDurationsWithStart = sortedDurations.map(({duration, item, id, audioUrl}) => {
+      const calculatedFrameDurations = durations.map(({duration, item, id, audioUrl, audioDuration}) => {
         const startFrame = currentFrame;
         currentFrame += duration;
-        return {startFrame, duration, item, id, audioUrl};
+        return {startFrame, endFrame: currentFrame, duration, item, id, audioUrl, audioDuration};
       });
 
-      setFrameDurations(frameDurationsWithStart);
+      setFrameDurations(calculatedFrameDurations);
 
-      // Calculate total duration
-      const totalDuration = frameDurationsWithStart.reduce((sum, {duration}) => sum + duration, 0);
+      const totalDuration = calculatedFrameDurations.reduce((sum, {duration}) => sum + duration, 0);
+      callback?.(calculatedFrameDurations, fps, totalDuration);
 
-      callback?.(frameDurationsWithStart, fps, totalDuration);
+      prevDataRef.current = data.frames;
     };
 
     calculateFrameDurations();
-  }, [data.frames, fps, processAudio]);
+  }, [data.frames, memoizedProcessAudio, transitionDuration, fps, callback]);
 
-  if (!imagesLoaded) {
+  if (!imagesLoaded || frameDurations.length === 0) {
     return <LoadingOverlay />;
   }
 
   return (
     <AbsoluteFill>
       <Series>
-        {frameDurations.map(({duration, startFrame, item, audioUrl}, index) => (
+        {frameDurations.map(({duration, item, audioUrl, startFrame, audioDuration}) => (
           <Series.Sequence key={item.id} durationInFrames={duration}>
-            <VideoFrame frameData={item}/>
+            <VideoFrame videoConfig={data?.videoConfig} frameData={item}/>
+            <AudioRemotion
+              volume={1}
+              src={audioUrl}
+              startFrom={0}
+              playsInline
+              playbackRate={audioDuration > 0 ? duration / fps / audioDuration : 1}
+            />
           </Series.Sequence>
         ))}
       </Series>
-      <GifOverlay/>
-      <AudioRemotion loop src={data.musicUrl} volume={0.5}/>
+      <AudioRemotion
+        loop
+        src={data?.videoConfig?.musicUrl}
+        volume={(f) =>
+          interpolate(f, [0, 1], [0.05, 0.05], { extrapolateLeft: "clamp" , extrapolateRight: "clamp"})
+        }
+      />
     </AbsoluteFill>
   );
 };
 
-const GifOverlay: React.FC = () => {
+const GifOverlay = ({videoConfig}: {videoConfig?: VideoConfigRemotion}) => {
   const [size, setSize] = useState(460);
-
+  const {durationInFrames, fps} = useVideoConfig();
   useEffect(() => {
     const handleResize = () => {
       const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
       const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
       const smallerDimension = Math.min(vw, vh);
-      setSize(Math.max(smallerDimension * 0.5, 200)); // 40% of smaller dimension, minimum 200px
+      setSize(Math.max(smallerDimension * 0.7, 400)); // 40% of smaller dimension, minimum 200px
     };
 
     handleResize(); // Set initial size
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
 
   return (
     <AbsoluteFill style={{zIndex: 2}}> {/* Increased z-index, but below subtitle */}
@@ -420,12 +450,23 @@ const GifOverlay: React.FC = () => {
           position: 'absolute',
           width: `${size}px`,
           height: `${size}px`,
-          bottom: `-${size * 0.35}px`,
-          right: `-${size * 0.2}px`,
+          bottom: `-${size * 0.4}px`, // Adjust bottom position based on size
+          right: `-${size * 0.3}px`,
           opacity: 1,
         }}
       >
-        <LottieCharacterRemotion url={`https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/teachizi/background/male_1.json`}/>
+        {/*<Gif*/}
+        {/*  width={size}*/}
+        {/*  height={size}*/}
+        {/*  src="https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/teachizi/background/businessman.gif"*/}
+        {/*  style={{*/}
+        {/*    width: '100%',*/}
+        {/*    height: '100%',*/}
+        {/*    objectFit: 'contain'*/}
+        {/*  }}*/}
+        {/*/>*/}
+        <LottieCharacterRemotion url={`https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/teachizi/background/${videoConfig?.avatarTemplate ?? 'male_1.json'}`}/>
+        {/*<Video muted loop startFrom={0} endAt={durationInFrames-10} src={'https://webcdn.synthesia.io/v4-lp/V4-avatars/V4%20-%20Ada.mp4'}/>*/}
       </div>
     </AbsoluteFill>
   );
@@ -458,7 +499,7 @@ const RemotionPlayer: React.FC<{
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const totalDuration = data.frames[data.frames.length - 1].end_time;
+  const [totalDuration, setTotalDuration] = useState(1)
   const {width, height} = useWindowsResize()
   const playerRef = React.useRef<PlayerRef>(null);
   const autoPlayRef = useRef<any>(null);
@@ -536,7 +577,7 @@ const RemotionPlayer: React.FC<{
   const renderLoading: RenderLoading = useCallback(({height, width}) => {
     return (
       <AbsoluteFill style={{backgroundColor: 'gray'}}>
-        ...
+
       </AbsoluteFill>
     );
   }, []);
@@ -548,16 +589,25 @@ const RemotionPlayer: React.FC<{
         ref={playerRef}
         component={VideoComposition}
         inputProps={{
-          data,
+          data: {
+            ...data,
+            videoConfig: {
+              avatar: true,
+              avatarTemplate: 'male_1.json',
+              voice: 'vi-VN-Neural2-D',
+              musicUrl: data?.musicUrl,
+              ...(data?.videoConfig ?? {}),
+            } as any
+          },
           isLoading,
-          callback: () => {
+          callback: (a: any, fps: any, totalDuration?: number,) => {
             console.log("DONE")
             setIsLoading(false);
             onPlay?.(true);
+            setTotalDuration(totalDuration ?? 1)
           }
         }}
-        numberOfSharedAudioTags={data.frames.length}
-        durationInFrames={Math.round(totalDuration * 30) ?? 1}
+        durationInFrames={Math.round(totalDuration+5) ?? 1}
         compositionWidth={parseInt(String(width)) || 720}
         compositionHeight={parseInt(String(height)) || 1080}
         fps={30}
@@ -615,7 +665,6 @@ export const RemotionThumbnail: React.FC<{ data: VideoData }> = ({data}) => {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-800 font-semibold">
         <LoadingSpinner/>
-        <p className="ml-4">Loading training module...</p>
       </div>
     );
   }
