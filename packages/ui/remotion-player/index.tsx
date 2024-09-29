@@ -411,7 +411,6 @@ const VideoComposition: React.FC<{
               src={audioUrl}
               startFrom={0}
               playsInline
-              playbackRate={audioDuration > 0 ? duration / fps / audioDuration : 1}
             />
           </Series.Sequence>
         ))}
