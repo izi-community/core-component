@@ -335,7 +335,6 @@ const LoadingOverlay: React.FC = () => (
           animation: 'spin 1s linear infinite',
         }}
       />
-      <LoadingSpinner/>
     </div>
   </AbsoluteFill>
 );
