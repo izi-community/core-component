@@ -9,40 +9,14 @@ import {
   Img,
   interpolate,
   Easing,
-  cancelRender, continueRender, delayRender,
+  cancelRender, continueRender, delayRender, spring, random,
 } from 'remotion';
 import {useInView} from 'react-intersection-observer';
 import useWindowsResize from "../../hook/use-windows-resize";
+import { preloadAudio as preloadAudioRemotion } from '@remotion/preload';
 
-import { Lottie, LottieAnimationData } from "@remotion/lottie";
 import {isEqual} from "lodash";
-
-const LottieCharacterRemotion = ({url}: {url: string}) => {
-  const [handle] = useState(() => delayRender(""));
-
-  const [animationData, setAnimationData] =
-    useState<LottieAnimationData | null>(null);
-
-  useEffect(() => {
-    fetch(url)
-      .then((data) => data.json())
-      .then((json) => {
-        setAnimationData(json);
-        continueRender(handle);
-      })
-      .catch((err) => {
-        cancelRender(err);
-      });
-  }, [handle, url]);
-
-  if (!animationData) {
-    return null;
-  }
-
-  return <Lottie loop animationData={animationData} />;
-};
-
-/* useImageCache*/
+import {GifOverlay} from "./remotion-lottie-sprite";
 
 const imageCache = new Map<string, HTMLImageElement>();
 
@@ -53,9 +27,9 @@ const useImagePreloader = (imageSources: string[]) => {
 
   useEffect(() => {
     let isMounted = true;
-    if(!isEqual(imageSourcesRef.current, imageSources)) {
+    if (!isEqual(imageSourcesRef.current, imageSources)) {
       setImagesLoaded(false);
-      imageSourcesRef.current = [...imageSources]
+      imageSourcesRef.current = [...imageSources];
       const loadImage = async (src: string) => {
         if (imageCache.has(src)) {
           return imageCache.get(src);
@@ -94,7 +68,16 @@ const useImagePreloader = (imageSources: string[]) => {
   return { imagesLoaded, errors };
 };
 
-/*useAudioCache*/
+function simpleHash(str: string) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+
+  return hash;
+}
 
 const audioCache = new Map();
 const useOptimizedAudioProcessing = (fps: number) => {
@@ -102,12 +85,12 @@ const useOptimizedAudioProcessing = (fps: number) => {
   const BUFFER_DURATION = 0.1; // 100ms buffer
 
   const memoizedProcessAudio = useMemo(() => {
-    const processAudioInner = async (audioUrl: string, duration: number) => {
+    const processAudioInner = async (subtitle: string, voice: string, language: string) => {
       if (!audioContext.current) {
         audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
 
-      const cacheKey = audioUrl;
+      const cacheKey = `${simpleHash(subtitle)}_${voice}_${language}`;
 
       if (audioCache.has(cacheKey)) {
         const cachedData = audioCache.get(cacheKey);
@@ -115,28 +98,25 @@ const useOptimizedAudioProcessing = (fps: number) => {
           ttsDuration: cachedData.duration,
           ttsDurationInFrames: Math.ceil((cachedData.duration + BUFFER_DURATION) * fps),
           audioUrl: cachedData.url,
-          audioBuffer: cachedData.buffer,
+          audioBuffer: cachedData.buffer
         };
       }
 
       try {
-        const response = await fetch(audioUrl);
-        const arrayBuffer = await response.arrayBuffer();
-        const audioBuffer = await audioContext.current.decodeAudioData(arrayBuffer);
+        const audio: any = await getTTSAudioUrl(subtitle, voice, language);
 
         const audioData = {
-          url: audioUrl,
-          duration: Math.max(duration, audioBuffer.duration) + BUFFER_DURATION,
-          buffer: audioBuffer,
+          url: audio?.url,
+          duration: audio.duration + BUFFER_DURATION
         };
 
+        await preloadAudioRemotion(audio?.url);
         audioCache.set(cacheKey, audioData);
 
         return {
           ttsDuration: audioData.duration,
           ttsDurationInFrames: Math.ceil(audioData.duration * fps),
-          audioUrl: audioData.url,
-          audioBuffer: audioData.buffer,
+          audioUrl: audioData.url
         };
       } catch (error) {
         console.error('Error processing audio:', error);
@@ -147,25 +127,34 @@ const useOptimizedAudioProcessing = (fps: number) => {
     return processAudioInner;
   }, [fps]);
 
-  const preloadAudio = useCallback(async (audioUrls: string[]) => {
-    const preloadPromises = audioUrls.map(url => memoizedProcessAudio(url, 0));
-    await Promise.all(preloadPromises);
-  }, [memoizedProcessAudio]);
-
   return {
-    processAudio: useCallback(memoizedProcessAudio, [memoizedProcessAudio]),
-    preloadAudio,
+    processAudio: useCallback(memoizedProcessAudio, [memoizedProcessAudio])
   };
 };
 
 
-export const getTTSAudioUrl = async (url = '', duration = 10) => {
-  return {
-    url: url,
-    duration: duration,
-  };
-}
+export const getTTSAudioUrl = async (text: string, voice_name = 'vi-VN-Neural2-D', language = 'Vietnamese') => {
+  const res = await fetch(`https://api-v2.trainizi.com/api/ai/generate_audio`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      script: text,
+      language_code: language,
+      voice: voice_name
+    })
+  }).then(result => result.json());
 
+  if (res) {
+    return {
+      url: res?.url,
+      duration: res?.duration
+    };
+  }
+
+  return undefined;
+};
 
 interface Frame {
   start_time?: number;
@@ -182,6 +171,7 @@ export interface VideoConfigRemotion {
   avatarTemplate: string;
   voice: string;
   musicUrl: string;
+  language?: string;
 }
 
 interface VideoData {
@@ -191,44 +181,175 @@ interface VideoData {
   videoConfig?: VideoConfigRemotion;
 }
 
-const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
-  const frame = useCurrentFrame();
-  const {fps} = useVideoConfig();
 
+const animationEffects = [
+  {
+    name: 'Fade In',
+    apply: (progress: number) => ({
+      opacity: interpolate(progress, [0, 1], [0, 1], { extrapolateRight: 'clamp' })
+    })
+  },
+  {
+    name: 'Zoom In',
+    apply: (progress: number) => ({
+      opacity: interpolate(progress, [0, 0.5], [0, 1], { extrapolateRight: 'clamp' }),
+      transform: `scale(${interpolate(progress, [0, 1], [0.5, 1], { extrapolateRight: 'clamp' })})`
+    })
+  },
+  {
+    name: 'Shrink',
+    apply: (progress: number) => ({
+      opacity: interpolate(progress, [0, 0.5], [0, 1], { extrapolateRight: 'clamp' }),
+      transform: `scale(${interpolate(progress, [0, 1], [1.5, 1], { extrapolateRight: 'clamp' })})`
+    })
+  },
+  {
+    name: 'Slide',
+    apply: (progress: number) => ({
+      opacity: interpolate(progress, [0, 0.5], [0, 1], { extrapolateRight: 'clamp' }),
+      transform: `translateX(${interpolate(progress, [0, 1], [100, 0], { extrapolateRight: 'clamp' })}%)`
+    })
+  },
+  {
+    name: 'Bounce',
+    apply: (progress: number) => ({
+      opacity: 1,
+      transform: `translateY(${spring({ fps: 30, frame: progress * 30, from: -50, to: 0, delay: 10 })}px)`
+    })
+  },
+  {
+    name: 'Tada',
+    apply: (progress: number) => ({
+      opacity: 1,
+      transform: `scale(${1 + Math.sin(progress * Math.PI * 4) * 0.1}) rotate(${Math.sin(progress * Math.PI * 4) * 5}deg)`
+    })
+  },
+  {
+    name: 'Jello',
+    apply: (progress: number) => ({
+      opacity: 1,
+      transform: `skew(${Math.sin(progress * Math.PI * 2) * 15}deg, ${Math.sin(progress * Math.PI * 2) * 15}deg)`
+    })
+  },
+  {
+    name: 'Blink',
+    apply: (progress: number) => ({
+      opacity: Math.sin(progress * Math.PI * 5) >= 0 ? 1 : 0
+    })
+  },
+  {
+    name: 'Swing',
+    apply: (progress: number) => ({
+      opacity: 1,
+      transform: `rotate(${Math.sin(progress * Math.PI * 2) * 15}deg)`
+    })
+  },
+  {
+    name: 'Elastic Snap',
+    apply: (progress: number) => ({
+      opacity: 1,
+      transform: `translateX(${spring({ fps: 30, frame: progress * 30, from: 100, to: 0, delay: 4 })}px)`
+    })
+  },
+  {
+    name: 'Flip',
+    apply: (progress: number) => ({
+      opacity: 1,
+      transform: `perspective(400px) rotateY(${interpolate(progress, [0, 1], [180, 0], { extrapolateRight: 'clamp' })}deg)`
+    })
+  },
+  {
+    name: 'Typing',
+    apply: (progress: number) => ({
+      opacity: 1,
+      clipPath: `inset(0 ${100 - progress * 100}% 0 0)`
+    })
+  },
+  {
+    name: 'Word Drop',
+    apply: (progress: number) => ({
+      opacity: interpolate(progress, [0, 0.5], [0, 1], { extrapolateRight: 'clamp' }),
+      transform: `translateY(${interpolate(progress, [0, 1], [-100, 0], { extrapolateRight: 'clamp' })}%)`
+    })
+  },
+  {
+    name: 'Reveal',
+    apply: (progress: number) => ({
+      opacity: 1,
+      clipPath: `inset(0 0 ${100 - progress * 100}% 0)`
+    })
+  },
+  {
+    name: 'Swift Unveil',
+    apply: (progress: number) => ({
+      opacity: 1,
+      transform: `translateX(${interpolate(progress, [0, 1], [-100, 0], { extrapolateRight: 'clamp' })}%)`,
+      clipPath: `inset(0 0 0 ${100 - progress * 200}%)`
+    })
+  },
+  {
+    name: 'Wave',
+    apply: (progress: number, index: number) => ({
+      opacity: 1,
+      transform: `translateY(${Math.sin((progress + index * 0.1) * Math.PI * 2) * 10}px)`
+    })
+  },
+  {
+    name: 'Blur Reveal',
+    apply: (progress: number) => ({
+      opacity: 1,
+      filter: `blur(${interpolate(progress, [0, 1], [10, 0], { extrapolateRight: 'clamp' })}px)`
+    })
+  },
+  {
+    name: 'Character Grow',
+    apply: (progress: number, index: number) => ({
+      opacity: progress > index * 0.1 ? 1 : 0,
+      transform: `scale(${progress > index * 0.1 ? 1 : 0})`
+    })
+  }
+];
+
+const EnterpriseText: React.FC<{ text: string }> = ({ text }) => {
+  const frame = useCurrentFrame();
+  const { width, height, fps } = useVideoConfig();
+
+  const baseFontSize = Math.min(width, height) * 0.045;
   const words = text.split(' ');
 
+  const chosenEffect = useMemo(() => {
+    const randomIndex = Math.floor(random(text) * animationEffects.length);
+    return animationEffects[randomIndex];
+  }, [text]);
+
   return (
-    <div className="flex flex-wrap justify-center">
+    <div className="flex flex-wrap justify-center items-center">
       {words.map((word, i) => {
-        const delay = i * 3;
+        const delay = i * 2;
+        const animationDuration = 15; // Increased duration for more noticeable effects
         const progress = interpolate(
           frame - delay,
-          [0, 15],
+          [0, animationDuration],
           [0, 1],
           {
             extrapolateLeft: 'clamp',
-            extrapolateRight: 'clamp',
-            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+            extrapolateRight: 'clamp'
           }
         );
 
-        const opacity = interpolate(progress, [0, 1], [0, 1]);
-        const translateY = interpolate(progress, [0, 1], [10, 0]);
+        const style = {
+          ...chosenEffect.apply(progress, frame - delay),
+          display: 'inline-block',
+          fontSize: `${baseFontSize}px`,
+          fontWeight: 'bold',
+          color: 'white',
+          textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+          margin: '0 4px',
+          padding: '2px'
+        };
 
         return (
-          <span
-            key={i}
-            className="mr-1.5 mb-0.5"
-            style={{
-              opacity,
-              transform: `translateY(${translateY}px)`,
-              display: 'inline-block',
-              fontSize: '24px',
-              fontWeight: 'bold',
-              color: 'white',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
-            }}
-          >
+          <span key={i} style={style}>
             {word}
           </span>
         );
@@ -343,13 +464,15 @@ const LoadingOverlay: React.FC = () => (
 const VideoComposition: React.FC<{
   data: VideoData,
   isLoading?: boolean;
+  isPlaying?: boolean;
   callback: (a: any, fps: any, totalDuration?: number, ) => void;
-}> = ({data, callback, isLoading}) => {
+}> = ({data, callback, isLoading, isPlaying}) => {
   const transitionDuration = 20;
-  const {fps} = useVideoConfig();
+  const { fps } = useVideoConfig();
   const frame = useCurrentFrame();
+  const [localLoading, changeLocalLoading] = useState<boolean>(false);
   const [frameDurations, setFrameDurations] = useState<any[]>([]);
-  const {processAudio} = useOptimizedAudioProcessing(fps);
+  const { processAudio } = useOptimizedAudioProcessing(fps);
   const prevDataRef = useRef<VideoData['frames']>();
 
   const imageUrls = data.frames.map(frame => frame.url);
@@ -369,27 +492,27 @@ const VideoComposition: React.FC<{
             ttsDurationInFrames,
             audioUrl,
             ttsDuration
-          } = await memoizedProcessAudio(item?.audioUrl, item?.duration ?? ((item?.end_time ?? 0) - (item?.start_time ?? 0)));
+          } = await memoizedProcessAudio(item?.text, data?.videoConfig?.voice ?? '', data?.videoConfig?.language ?? '');
 
           const duration = ttsDurationInFrames + transitionDuration;
 
-          return {duration, item, audioUrl, id: index, audioDuration: ttsDuration};
+          return { duration, item, audioUrl, id: index, audioDuration: ttsDuration };
         })
       );
 
       let currentFrame = 0;
-      const calculatedFrameDurations = durations.map(({duration, item, id, audioUrl, audioDuration}) => {
+      const calculatedFrameDurations = durations.map(({ duration, item, id, audioUrl, audioDuration }) => {
         const startFrame = currentFrame;
         currentFrame += duration;
-        return {startFrame, endFrame: currentFrame, duration, item, id, audioUrl, audioDuration};
+        return { startFrame, endFrame: currentFrame, duration, item, id, audioUrl, audioDuration };
       });
 
       setFrameDurations(calculatedFrameDurations);
 
-      const totalDuration = calculatedFrameDurations.reduce((sum, {duration}) => sum + duration, 0);
+      const totalDuration = calculatedFrameDurations.reduce((sum, { duration }) => sum + duration, 0);
       callback?.(calculatedFrameDurations, fps, totalDuration);
 
-      prevDataRef.current = data.frames;
+      prevDataRef.current = [...data.frames];
     };
 
     calculateFrameDurations();
@@ -402,13 +525,12 @@ const VideoComposition: React.FC<{
   return (
     <AbsoluteFill>
       <Series>
-        {frameDurations.map(({duration, item, audioUrl, startFrame, audioDuration}) => (
-          <Series.Sequence key={item.id} durationInFrames={duration}>
-            <VideoFrame videoConfig={data?.videoConfig} frameData={item}/>
+        {frameDurations.map(({ duration, item, audioUrl, startFrame, audioDuration }, idx: number) => (
+          <Series.Sequence key={`item_${idx}`} durationInFrames={duration}>
+            <VideoFrame videoConfig={data?.videoConfig} frameData={item} />
             <AudioRemotion
               volume={1}
               src={audioUrl}
-              startFrom={0}
               playsInline
             />
           </Series.Sequence>
@@ -418,58 +540,17 @@ const VideoComposition: React.FC<{
         loop
         src={data?.videoConfig?.musicUrl}
         volume={(f) =>
-          interpolate(f, [0, 1], [0.05, 0.05], { extrapolateLeft: "clamp" , extrapolateRight: "clamp"})
+          interpolate(f, [0, 1], [0.2, 0.2], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
         }
       />
+      {
+        data?.videoConfig?.avatarTemplate && (
+          <GifOverlay videoConfig={data?.videoConfig} isPlaying={isPlaying} />
+        )
+      }
     </AbsoluteFill>
   );
 };
-
-const GifOverlay = ({videoConfig}: {videoConfig?: VideoConfigRemotion}) => {
-  const [size, setSize] = useState(460);
-  const {durationInFrames, fps} = useVideoConfig();
-  useEffect(() => {
-    const handleResize = () => {
-      const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
-      const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
-      const smallerDimension = Math.min(vw, vh);
-      setSize(Math.max(smallerDimension * 0.7, 400)); // 40% of smaller dimension, minimum 200px
-    };
-
-    handleResize(); // Set initial size
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  return (
-    <AbsoluteFill style={{zIndex: 2}}> {/* Increased z-index, but below subtitle */}
-      <div
-        style={{
-          position: 'absolute',
-          width: `${size}px`,
-          height: `${size}px`,
-          bottom: `-${size * 0.4}px`, // Adjust bottom position based on size
-          right: `-${size * 0.3}px`,
-          opacity: 1,
-        }}
-      >
-        {/*<Gif*/}
-        {/*  width={size}*/}
-        {/*  height={size}*/}
-        {/*  src="https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/teachizi/background/businessman.gif"*/}
-        {/*  style={{*/}
-        {/*    width: '100%',*/}
-        {/*    height: '100%',*/}
-        {/*    objectFit: 'contain'*/}
-        {/*  }}*/}
-        {/*/>*/}
-        <LottieCharacterRemotion url={`https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/teachizi/background/${videoConfig?.avatarTemplate ?? 'male_1.json'}`}/>
-        {/*<Video muted loop startFrom={0} endAt={durationInFrames-10} src={'https://webcdn.synthesia.io/v4-lp/V4-avatars/V4%20-%20Ada.mp4'}/>*/}
-      </div>
-    </AbsoluteFill>
-  );
-};
-
 
 const LoadingSpinner: React.FC = () => (
   <div className="w-full h-full flex items-center justify-center">
@@ -588,14 +669,7 @@ const RemotionPlayer: React.FC<{
         component={VideoComposition}
         inputProps={{
           data: {
-            ...data,
-            videoConfig: {
-              avatar: true,
-              avatarTemplate: 'male_1.json',
-              voice: 'vi-VN-Neural2-D',
-              musicUrl: data?.musicUrl,
-              ...(data?.videoConfig ?? {}),
-            } as any
+            ...data
           },
           isLoading,
           callback: (a: any, fps: any, totalDuration?: number,) => {
@@ -603,7 +677,8 @@ const RemotionPlayer: React.FC<{
             setIsLoading(false);
             onPlay?.(true);
             setTotalDuration(totalDuration ?? 1)
-          }
+          },
+          isPlaying,
         }}
         durationInFrames={Math.round(totalDuration+5) ?? 1}
         compositionWidth={parseInt(String(width)) || 720}
