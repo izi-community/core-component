@@ -16,7 +16,7 @@ const LottieSprite: React.FC<LottieSpriteProps> = ({
                                                      items,
                                                      width = '100%',
                                                      height = '100%',
-                                                     transitionDuration = 500,
+                                                     transitionDuration = 0,
                                                      minDuration = 5000,
                                                      isPlaying = true
                                                    }) => {

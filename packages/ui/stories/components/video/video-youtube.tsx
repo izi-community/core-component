@@ -325,7 +325,10 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                       }
                     }}
                     refVideo={refVideo}
-                    data={media?.data}/>
+                    data={{
+                      ...media?.data,
+                      videoConfig: media?.videoConfig,
+                    }}/>
                 )
               }
             </>

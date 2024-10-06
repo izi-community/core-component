@@ -181,175 +181,46 @@ interface VideoData {
   videoConfig?: VideoConfigRemotion;
 }
 
-
-const animationEffects = [
-  {
-    name: 'Fade In',
-    apply: (progress: number) => ({
-      opacity: interpolate(progress, [0, 1], [0, 1], { extrapolateRight: 'clamp' })
-    })
-  },
-  {
-    name: 'Zoom In',
-    apply: (progress: number) => ({
-      opacity: interpolate(progress, [0, 0.5], [0, 1], { extrapolateRight: 'clamp' }),
-      transform: `scale(${interpolate(progress, [0, 1], [0.5, 1], { extrapolateRight: 'clamp' })})`
-    })
-  },
-  {
-    name: 'Shrink',
-    apply: (progress: number) => ({
-      opacity: interpolate(progress, [0, 0.5], [0, 1], { extrapolateRight: 'clamp' }),
-      transform: `scale(${interpolate(progress, [0, 1], [1.5, 1], { extrapolateRight: 'clamp' })})`
-    })
-  },
-  {
-    name: 'Slide',
-    apply: (progress: number) => ({
-      opacity: interpolate(progress, [0, 0.5], [0, 1], { extrapolateRight: 'clamp' }),
-      transform: `translateX(${interpolate(progress, [0, 1], [100, 0], { extrapolateRight: 'clamp' })}%)`
-    })
-  },
-  {
-    name: 'Bounce',
-    apply: (progress: number) => ({
-      opacity: 1,
-      transform: `translateY(${spring({ fps: 30, frame: progress * 30, from: -50, to: 0, delay: 10 })}px)`
-    })
-  },
-  {
-    name: 'Tada',
-    apply: (progress: number) => ({
-      opacity: 1,
-      transform: `scale(${1 + Math.sin(progress * Math.PI * 4) * 0.1}) rotate(${Math.sin(progress * Math.PI * 4) * 5}deg)`
-    })
-  },
-  {
-    name: 'Jello',
-    apply: (progress: number) => ({
-      opacity: 1,
-      transform: `skew(${Math.sin(progress * Math.PI * 2) * 15}deg, ${Math.sin(progress * Math.PI * 2) * 15}deg)`
-    })
-  },
-  {
-    name: 'Blink',
-    apply: (progress: number) => ({
-      opacity: Math.sin(progress * Math.PI * 5) >= 0 ? 1 : 0
-    })
-  },
-  {
-    name: 'Swing',
-    apply: (progress: number) => ({
-      opacity: 1,
-      transform: `rotate(${Math.sin(progress * Math.PI * 2) * 15}deg)`
-    })
-  },
-  {
-    name: 'Elastic Snap',
-    apply: (progress: number) => ({
-      opacity: 1,
-      transform: `translateX(${spring({ fps: 30, frame: progress * 30, from: 100, to: 0, delay: 4 })}px)`
-    })
-  },
-  {
-    name: 'Flip',
-    apply: (progress: number) => ({
-      opacity: 1,
-      transform: `perspective(400px) rotateY(${interpolate(progress, [0, 1], [180, 0], { extrapolateRight: 'clamp' })}deg)`
-    })
-  },
-  {
-    name: 'Typing',
-    apply: (progress: number) => ({
-      opacity: 1,
-      clipPath: `inset(0 ${100 - progress * 100}% 0 0)`
-    })
-  },
-  {
-    name: 'Word Drop',
-    apply: (progress: number) => ({
-      opacity: interpolate(progress, [0, 0.5], [0, 1], { extrapolateRight: 'clamp' }),
-      transform: `translateY(${interpolate(progress, [0, 1], [-100, 0], { extrapolateRight: 'clamp' })}%)`
-    })
-  },
-  {
-    name: 'Reveal',
-    apply: (progress: number) => ({
-      opacity: 1,
-      clipPath: `inset(0 0 ${100 - progress * 100}% 0)`
-    })
-  },
-  {
-    name: 'Swift Unveil',
-    apply: (progress: number) => ({
-      opacity: 1,
-      transform: `translateX(${interpolate(progress, [0, 1], [-100, 0], { extrapolateRight: 'clamp' })}%)`,
-      clipPath: `inset(0 0 0 ${100 - progress * 200}%)`
-    })
-  },
-  {
-    name: 'Wave',
-    apply: (progress: number, index: number) => ({
-      opacity: 1,
-      transform: `translateY(${Math.sin((progress + index * 0.1) * Math.PI * 2) * 10}px)`
-    })
-  },
-  {
-    name: 'Blur Reveal',
-    apply: (progress: number) => ({
-      opacity: 1,
-      filter: `blur(${interpolate(progress, [0, 1], [10, 0], { extrapolateRight: 'clamp' })}px)`
-    })
-  },
-  {
-    name: 'Character Grow',
-    apply: (progress: number, index: number) => ({
-      opacity: progress > index * 0.1 ? 1 : 0,
-      transform: `scale(${progress > index * 0.1 ? 1 : 0})`
-    })
-  }
-];
-
-const EnterpriseText: React.FC<{ text: string }> = ({ text }) => {
+const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
   const frame = useCurrentFrame();
-  const { width, height, fps } = useVideoConfig();
+  const {fps, width, height} = useVideoConfig();
 
   const baseFontSize = Math.min(width, height) * 0.045;
+
   const words = text.split(' ');
 
-  const chosenEffect = useMemo(() => {
-    const randomIndex = Math.floor(random(text) * animationEffects.length);
-    return animationEffects[randomIndex];
-  }, [text]);
-
   return (
-    <div className="flex flex-wrap justify-center items-center">
+    <div className="flex flex-wrap justify-center">
       {words.map((word, i) => {
-        const delay = i * 2;
-        const animationDuration = 15; // Increased duration for more noticeable effects
+        const delay = i * 3;
         const progress = interpolate(
           frame - delay,
-          [0, animationDuration],
+          [0, 15],
           [0, 1],
           {
             extrapolateLeft: 'clamp',
-            extrapolateRight: 'clamp'
+            extrapolateRight: 'clamp',
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
           }
         );
 
-        const style = {
-          ...chosenEffect.apply(progress, frame - delay),
-          display: 'inline-block',
-          fontSize: `${baseFontSize}px`,
-          fontWeight: 'bold',
-          color: 'white',
-          textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-          margin: '0 4px',
-          padding: '2px'
-        };
+        const opacity = interpolate(progress, [0, 1], [0, 1]);
+        const translateY = interpolate(progress, [0, 1], [10, 0]);
 
         return (
-          <span key={i} style={style}>
+          <span
+            key={i}
+            className="mr-1.5 mb-0.5"
+            style={{
+              opacity,
+              transform: `translateY(${translateY}px)`,
+              display: 'inline-block',
+              fontSize: `${baseFontSize}px`,
+              fontWeight: 'bold',
+              color: 'white',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+            }}
+          >
             {word}
           </span>
         );
