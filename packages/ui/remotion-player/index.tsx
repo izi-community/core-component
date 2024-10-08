@@ -9,46 +9,66 @@ import {
   Img,
   interpolate,
   Easing,
-  cancelRender, continueRender, delayRender, spring, random,
+  cancelRender, continueRender, delayRender, spring, random, Video,
 } from 'remotion';
 import {useInView} from 'react-intersection-observer';
 import useWindowsResize from "../../hook/use-windows-resize";
-import { preloadAudio as preloadAudioRemotion } from '@remotion/preload';
+import { preloadAudio as preloadAudioRemotion, preloadVideo } from '@remotion/preload';
 
 import {isEqual} from "lodash";
 import {GifOverlay} from "./remotion-lottie-sprite";
 
-const imageCache = new Map<string, HTMLImageElement>();
+const mediaCache = new Map<string, HTMLImageElement | HTMLVideoElement>();
 
-const useImagePreloader = (imageSources: string[]) => {
-  const [imagesLoaded, setImagesLoaded] = useState(false);
+const useMediaPreloader = (mediaSources: Array<{ url: string; type: string }>) => {
+  const [mediaLoaded, setMediaLoaded] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
-  const imageSourcesRef = useRef<string[]>([]);
+  const mediaSourcesRef = useRef<Array<{ url: string; type: string }>>([]);
+  const cancelPreloadRef = useRef<Array<() => void>>([]);
 
   useEffect(() => {
     let isMounted = true;
-    if (!isEqual(imageSourcesRef.current, imageSources)) {
-      setImagesLoaded(false);
-      imageSourcesRef.current = [...imageSources];
-      const loadImage = async (src: string) => {
-        if (imageCache.has(src)) {
-          return imageCache.get(src);
+    if (!isEqual(mediaSourcesRef.current, mediaSources)) {
+      setMediaLoaded(false);
+      mediaSourcesRef.current = [...mediaSources];
+
+      // Cancel any ongoing preloads
+      cancelPreloadRef.current.forEach(cancel => cancel());
+      cancelPreloadRef.current = [];
+
+      const loadMedia = async (source: { url: string; type: string }) => {
+        if (mediaCache.has(source.url)) {
+          return mediaCache.get(source.url);
         }
 
         return new Promise<void>((resolve, reject) => {
-          const img = new Image();
-          img.src = src;
-          img.onload = () => {
-            imageCache.set(src, img);
-            resolve();
-          };
-          img.onerror = () => reject(src);
+          if (source.type === 'VIDEO') {
+            const cancelPreload = preloadVideo(source.url);
+            cancelPreloadRef.current.push(cancelPreload);
+
+            const video = document.createElement('video');
+            video.src = source.url;
+            video.onloadedmetadata = () => {
+              mediaCache.set(source.url, video);
+              resolve();
+            };
+            video.onerror = () => reject(source.url);
+          } else {
+            const img = new Image();
+            img.src = source.url;
+            img.onload = () => {
+              mediaCache.set(source.url, img);
+              resolve();
+            };
+            img.onerror = () => reject(source.url);
+          }
         });
       };
-      Promise.all(imageSources.map(loadImage))
+
+      Promise.all(mediaSources.map(loadMedia))
         .then(() => {
           if (isMounted) {
-            setImagesLoaded(true);
+            setMediaLoaded(true);
           }
         })
         .catch((errorSrc) => {
@@ -57,15 +77,17 @@ const useImagePreloader = (imageSources: string[]) => {
           }
         });
     } else {
-      setImagesLoaded(true);
+      setMediaLoaded(true);
     }
 
     return () => {
       isMounted = false;
+      // Cancel any ongoing preloads when unmounting
+      cancelPreloadRef.current.forEach(cancel => cancel());
     };
-  }, [imageSources, imagesLoaded]);
+  }, [mediaSources, mediaLoaded]);
 
-  return { imagesLoaded, errors };
+  return { mediaLoaded, errors };
 };
 
 function simpleHash(str: string) {
@@ -257,24 +279,33 @@ const VideoFrame: React.FC<{ frameData: Frame; videoConfig?: VideoConfigRemotion
 
   return (
     <AbsoluteFill style={{ background: '#000' }}>
-      <Img
-        src={frameData.url}
-        alt={frameData.text}
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'center',
-          transform: `scale(${scale})`,
-          opacity: opacity,
-        }}
-      />
+      {frameData.type === 'VIDEO' ? (
+        <Video
+          src={frameData.url}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+            transform: `scale(${scale})`,
+            opacity: opacity
+          }}
+        />
+      ) : (
+        <Img
+          src={frameData.url}
+          alt={frameData.text}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+            transform: `scale(${scale})`,
+            opacity: opacity
+          }}
+        />
+      )}
       <SubtitleOverlay text={frameData.text} />
-      {
-        videoConfig?.avatarTemplate && (
-          <GifOverlay videoConfig={videoConfig} />
-        )
-      }
     </AbsoluteFill>
   );
 };
@@ -346,8 +377,8 @@ const VideoComposition: React.FC<{
   const { processAudio } = useOptimizedAudioProcessing(fps);
   const prevDataRef = useRef<VideoData['frames']>();
 
-  const imageUrls = data.frames.map(frame => frame.url);
-  const { imagesLoaded, errors } = useImagePreloader(imageUrls);
+  const mediaSources = data.frames.map(frame => ({ url: frame.url, type: frame.type }));
+  const { mediaLoaded, errors } = useMediaPreloader(mediaSources);
 
   const memoizedProcessAudio = useCallback(processAudio, [fps]);
 
@@ -367,15 +398,15 @@ const VideoComposition: React.FC<{
 
           const duration = ttsDurationInFrames + transitionDuration;
 
-          return { duration, item, audioUrl, id: index, audioDuration: ttsDuration };
+          return { duration, item, audioUrl, id: index, audioDuration: ttsDuration, type: item?.type };
         })
       );
 
       let currentFrame = 0;
-      const calculatedFrameDurations = durations.map(({ duration, item, id, audioUrl, audioDuration }) => {
+      const calculatedFrameDurations = durations.map(({ duration, item, id, audioUrl, audioDuration, type }) => {
         const startFrame = currentFrame;
         currentFrame += duration;
-        return { startFrame, endFrame: currentFrame, duration, item, id, audioUrl, audioDuration };
+        return { startFrame, endFrame: currentFrame, duration, item, id, audioUrl, audioDuration, type };
       });
 
       setFrameDurations(calculatedFrameDurations);
@@ -389,7 +420,7 @@ const VideoComposition: React.FC<{
     calculateFrameDurations();
   }, [data.frames, memoizedProcessAudio, transitionDuration, fps, callback]);
 
-  if (!imagesLoaded || frameDurations.length === 0) {
+  if (!mediaLoaded || frameDurations.length === 0) {
     return <LoadingOverlay />;
   }
 
