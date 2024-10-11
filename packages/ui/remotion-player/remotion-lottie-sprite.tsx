@@ -101,21 +101,43 @@ interface VideoConfigRemotion {
   avatarTemplate?: string;
 }
 
+export function checkMaleString(str: string): boolean {
+  return str.includes("/male") && !str.includes(".json");
+}
+
+export function checkFemaleString(str: string): boolean {
+  return str.includes("/female") && !str.includes(".json");
+}
+
 const GifOverlay: React.FC<{ videoConfig?: VideoConfigRemotion; isPlaying?: boolean }> = ({ videoConfig, isPlaying = true }) => {
   const [size, setSize] = useState(460);
   const { width, height } = useVideoConfig();
 
   useEffect(() => {
     const smallerDimension = Math.min(width, height);
-    setSize(Math.max(smallerDimension * 0.7, 200));
+    setSize(Math.max(smallerDimension * 0.5, 140));
   }, [width, height]);
 
-  const lottieItems = useMemo(() => {
-    if (!videoConfig?.avatarTemplate) return [];
-    return [1, 2, 3, 4].map(i =>
-      `https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/lottie-avatar/${videoConfig.avatarTemplate ?? 'working_professionals/male'}/${i}.json`
-    );
-  }, [videoConfig?.avatarTemplate]);
+  const url = useMemo(() => {
+    if(!videoConfig?.avatarTemplate) return ''
+    if(videoConfig?.avatarTemplate && ['male_1.json'].includes(videoConfig?.avatarTemplate)) {
+      return `https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/lottie-avatar/male/1.json`
+    }
+
+    if(videoConfig?.avatarTemplate && ['female_1.json'].includes(videoConfig?.avatarTemplate)) {
+      return `https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/lottie-avatar/female/1.json`
+    }
+
+    if(videoConfig?.avatarTemplate && checkMaleString(videoConfig?.avatarTemplate)) {
+      return `https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/lottie-avatar/male/1.json`
+    }
+
+    if(videoConfig?.avatarTemplate && checkFemaleString(videoConfig?.avatarTemplate)) {
+      return `https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/lottie-avatar/female/1.json`
+    }
+
+    return `https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/lottie-avatar/${videoConfig?.avatarTemplate ?? ''}`
+  }, [videoConfig]);
 
   return (
     <AbsoluteFill style={{ zIndex: 2 }}>
@@ -124,28 +146,28 @@ const GifOverlay: React.FC<{ videoConfig?: VideoConfigRemotion; isPlaying?: bool
           position: 'absolute',
           width: `${size}px`,
           height: `${size}px`,
-          bottom: `-${size * 0.05}px`,
-          right: `-${size * 0.15}px`,
+          bottom: `${size * 0.16}px`,
+          right: `${size * 0.08}px`,
           opacity: 1,
         }}
       >
 
         {
-          videoConfig?.avatarTemplate && ['male_1.json', 'female_1.json'].includes(videoConfig?.avatarTemplate) && (
-            <LottieCharacterRemotion url={`https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/lottie-avatar/working_professionals/male/1.json`}/>
+          url && (
+            <LottieCharacterRemotion url={url}/>
           )
         }
 
-        {
-          videoConfig?.avatarTemplate && !['male_1.json', 'female_1.json'].includes(videoConfig?.avatarTemplate) && (
-            <LottieSprite
-              items={lottieItems}
-              transitionDuration={1000}
-              minDuration={5000}
-              isPlaying={isPlaying}
-            />
-          )
-        }
+        {/*{*/}
+        {/*  videoConfig?.avatarTemplate && !['male_1.json', 'female_1.json'].includes(videoConfig?.avatarTemplate) && (*/}
+        {/*    <LottieSprite*/}
+        {/*      items={lottieItems}*/}
+        {/*      transitionDuration={1000}*/}
+        {/*      minDuration={5000}*/}
+        {/*      isPlaying={isPlaying}*/}
+        {/*    />*/}
+        {/*  )*/}
+        {/*}*/}
       </div>
     </AbsoluteFill>
   );
