@@ -674,7 +674,9 @@ const VideoRemotionComponentPlayer = ({
   }, onPause = () => {
   }, onEnded = () => {
   }
+
                                       }: any) => {
+  console.log({autoPlay})
   const {ref, inView} = useInView({
     threshold: 0
   });
