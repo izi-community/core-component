@@ -319,9 +319,17 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                       if(e) {
                         changeLocalPause(false)
                         changeIsOnUnstarted(false)
+                        setIsClickPaused(false)
                       } else {
                         changeLocalPause(true)
                         changeIsOnUnstarted(true)
+                      }
+                    }}
+                    onEnded={(e: any) => {
+                      if (!e) {
+                        changeLocalPause(true)
+                        changeIsOnUnstarted(true)
+                        setIsClickPaused(true)
                       }
                     }}
                     refVideo={refVideo}
@@ -583,7 +591,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
         )
       }
 
-      {(showLoader) && (
+      {(showLoader && media?.type !== 'VIDEO_REMOTION_MEDIA') && (
         <div className={styles.loaderWrapper}>
           <div className={styles.loader}/>
         </div>
