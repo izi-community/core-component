@@ -505,6 +505,14 @@ const RemotionPlayer: React.FC<{
     }
   }, [muted, playerRef]);
 
+  useEffect(() => {
+    if (autoPlay && playerRef.current && !isLoading) {
+      playerRef.current.play?.();
+      setIsPlaying(true);
+      onPlay?.(true);
+    }
+  }, [autoPlay, isLoading]);
+
   const handleError = useCallback((error: Error) => {
     console.error('Player error:', error);
     setError('An error occurred while playing the video. Please try again.');
