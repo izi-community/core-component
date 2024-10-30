@@ -13,7 +13,6 @@ import {getVideo} from "../../../../../utils/media";
 import Typewriter from "./typewriter";
 import { useStoriesContext } from "../../hooks";
 import VideoRemotionComponentPlayer from "../../../remotion-player";
-import { useLocalStorage } from "usehooks-ts";
 
 type VideoYoutubeContextProps = {
   media?: any;
@@ -45,7 +44,6 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   const { ref, inView } = useInView({
     threshold: 0
   });
-  const [_isPLocalStore,setIsPauseLocalStore] = useLocalStorage("isPause","No")
   const isLocalPausedRef = useRef<boolean>(null);
 
   const isLocalMutedRef = useRef<boolean>(false);
@@ -88,10 +86,8 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   useEffect(() => {
     if(inView) {
       console.log("aaaa", props?.indexSlide)
-      setIsPauseLocalStore(props?.indexSlide === 0?"Yes":"No")
       changeLocalPause(props?.indexSlide === 0)
     } else {
-      setIsPauseLocalStore("Yes")
       changeLocalPause(true)
     }
   }, [inView, props?.indexSlide]);
@@ -145,13 +141,11 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
       e.stopPropagation();
       setBlurControlVideo(!blurControlVideo)
       props?.effectSounds?.select?.();
-      setIsPauseLocalStore(!isLocalPaused?"Yes":"No")
       changeLocalPause(!isLocalPaused)
       setIsClickPaused(!isClickPaused)
     } else {
       e.stopPropagation();
       props?.effectSounds?.select?.();
-      setIsPauseLocalStore(!isLocalPaused?"Yes":"No")
       changeLocalPause(!isLocalPaused)
       changeIsOnUnstarted(false)
     }
@@ -217,20 +211,17 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
 
                     onStart={() => {
                       if(isOnUnstarted) {
-                        setIsPauseLocalStore("No")
                         changeLocalPause(false)
                         changeIsOnUnstarted(false)
                       }
                     }}
                     onReady={() => {
                       setShowLoader(true)
-                      setIsPauseLocalStore("No")
                       changeLocalPause(false)
                     }}
                     onError={(error: any) => {
                       if(error?.name === 'NotAllowedError') {
                         changeIsOnUnstarted(true)
-                        setIsPauseLocalStore("Yes")
                         changeLocalPause(true)
                         setShowLoader(false)
                       }
@@ -238,7 +229,6 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                     }}
                     onEnded={() => {
                       console.log('onEnded');
-                      setIsPauseLocalStore("Yes")
                       changeLocalPause(true)
                       setIsClickPaused(true)
                       setBlurControlVideo(true)
@@ -268,7 +258,6 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                         onUnstarted: () => {
                           console.log("onUnstarted")
                           changeIsOnUnstarted(true)
-                          setIsPauseLocalStore("Yes")
                           changeLocalPause(true)
                         }
                       },
@@ -319,30 +308,25 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                     muted={isLocalMuted}
                     autoPlay={props?.indexSlide !== 0}
                     playing={!isLocalPaused}
-                    setIsPauseLocalStore={setIsPauseLocalStore}
                     onPlay={(e: any) => {
                       setShowLoader(false)
                       if(e === true && !isLocalPausedRef.current && props?.indexSlide === 0) {
                         isLocalPausedRef.current = true
                         changeIsOnUnstarted(true)
-                        setIsPauseLocalStore("Yes")
                         changeLocalPause(true)
                         return
                       }
                       if(e) {
-                        setIsPauseLocalStore("No")
                         changeLocalPause(false)
                         changeIsOnUnstarted(false)
                         setIsClickPaused(false)
                       } else {
-                        setIsPauseLocalStore("Yes")
                         changeLocalPause(true)
                         changeIsOnUnstarted(true)
                       }
                     }}
                     onEnded={(e: any) => {
                       if (!e) {
-                        setIsPauseLocalStore("Yes")
                         changeLocalPause(true)
                         changeIsOnUnstarted(true)
                         setIsClickPaused(true)

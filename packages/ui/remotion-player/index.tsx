@@ -474,9 +474,8 @@ const RemotionPlayer: React.FC<{
   refVideo: any,
   onPlay: (s: boolean) => void,
   onPause: (s: boolean) => void,
-  onEnded: (s: boolean) => void,
-  setIsPauseLocalStore:(pasue:"Yes"|"No")=>void
-}> = ({data, muted = false, playing, autoPlay = false, refVideo, onPlay, onEnded, onPause,setIsPauseLocalStore}) => {
+  onEnded: (s: boolean) => void
+}> = ({data, muted = false, playing, autoPlay = false, refVideo, onPlay, onEnded, onPause}) => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -489,10 +488,8 @@ const RemotionPlayer: React.FC<{
   useEffect(() => {
     if(playerRef.current) {
       if(playing) {
-        setIsPauseLocalStore("No")
         playerRef.current.play?.()
       } else if(playerRef.current.isPlaying?.()) {
-        setIsPauseLocalStore("Yes")
         playerRef.current.pause?.()
       }
     }
@@ -684,7 +681,7 @@ const VideoRemotionComponentPlayer = ({
                                         data = {}, playing = true, autoPlay = false, muted = false, refVideo, onPlay = () => {
   }, onPause = () => {
   }, onEnded = () => {
-  },setIsPauseLocalStore
+  }
 
                                       }: any) => {
   console.log({autoPlay})
@@ -699,7 +696,7 @@ const VideoRemotionComponentPlayer = ({
       {
         inView && (
           <RemotionPlayer autoPlay={autoPlay} muted={muted} playing={playing} refVideo={refVideo} data={data} onPlay={onPlay}
-                          onPause={onPause} onEnded={onEnded} setIsPauseLocalStore={setIsPauseLocalStore}/>
+                          onPause={onPause} onEnded={onEnded}/>
         )
       }
     </div>
