@@ -172,7 +172,7 @@
     "vite-plugin-require": "^1.1.10",
     "vite-plugin-style-import": "^2.0.0",
     "vite-plugin-svgr": "^4.2.0",
-    "vite-tsconfig-paths": "^4.0.7"
+    "vite-tsconfig-paths": "^4.3.2"
   },
   "engines": {
     "node": ">=17.0.0 <20.0.0"
