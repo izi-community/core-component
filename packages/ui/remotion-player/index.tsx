@@ -441,9 +441,7 @@ const VideoComposition: React.FC<{
       <AudioRemotion
         loop
         src={data?.videoConfig?.musicUrl}
-        volume={(f) =>
-          interpolate(f, [0, 1], [0.2, 0.2], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
-        }
+        volume={0.4}
       />
       {
         data?.videoConfig?.avatarTemplate && (
