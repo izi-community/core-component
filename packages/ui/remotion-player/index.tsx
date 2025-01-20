@@ -125,6 +125,7 @@ const useOptimizedAudioProcessing = (fps: number) => {
       }
 
       try {
+        console.log({subtitle, voice, language})
         const audio: any = await getTTSAudioUrl(subtitle, voice, language);
 
         const audioData = {
@@ -394,7 +395,7 @@ const VideoComposition: React.FC<{
             ttsDurationInFrames,
             audioUrl,
             ttsDuration
-          } = await memoizedProcessAudio(item?.text, data?.videoConfig?.voice ?? '', data?.videoConfig?.language ?? '');
+          } = await memoizedProcessAudio(item?.text, data?.videoConfig?.voice ?? '',  'vi-VN-Neural2-A');
 
           const duration = ttsDurationInFrames + transitionDuration;
 
