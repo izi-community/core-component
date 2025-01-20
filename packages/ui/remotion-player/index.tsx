@@ -442,7 +442,7 @@ const VideoComposition: React.FC<{
       <AudioRemotion
         loop
         src={data?.videoConfig?.musicUrl}
-        volume={0.4}
+        volume={0.1}
       />
       {
         data?.videoConfig?.avatarTemplate && (
