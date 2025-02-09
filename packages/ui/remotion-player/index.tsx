@@ -645,7 +645,7 @@ const VideoComposition: React.FC<{
           volume={0.1}
         />
       )}
-      {data?.videoConfig?.avatarTemplate && (
+      {data?.videoConfig?.avatarTemplate && data?.videoConfig?.avatar && (
         <GifOverlay videoConfig={data?.videoConfig} isPlaying={isPlaying} />
       )}
     </AbsoluteFill>
