@@ -209,12 +209,22 @@ const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
   const frame = useCurrentFrame();
   const {fps, width, height} = useVideoConfig();
 
-  const baseFontSize = Math.min(width, height) * 0.045;
+  const baseFontSize = Math.min(width, height) * 0.035;
 
   const words = text.split(' ');
+  const p = interpolate(
+    frame,
+    [0, 15],
+    [0, 1],
+    {
+      extrapolateLeft: 'clamp',
+      extrapolateRight: 'clamp',
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    }
+  )
 
   return (
-    <div className="flex flex-wrap justify-center">
+    <div className={`${p ? 'bg-black/90' : ''} p-0.5 rounded-lg flex flex-wrap justify-center`}>
       {words.map((word, i) => {
         const delay = i * 3;
         const progress = interpolate(
@@ -242,7 +252,7 @@ const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
               fontSize: `${baseFontSize}px`,
               fontWeight: 'bold',
               color: 'white',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+              textShadow: '0px 0px 4px rgba(0,0,0,1)'
             }}
           >
             {word}
@@ -267,7 +277,7 @@ const VideoFrame: React.FC<{ frameData: Frame; videoConfig?: VideoConfigRemotion
     }
   );
 
-  const scale = interpolate(progress, [0, 1], [1.4, 1]);
+  const scale = interpolate(progress, [0, 1], [1.1, 1]);
 
   const opacity = interpolate(
     progress,
@@ -279,32 +289,30 @@ const VideoFrame: React.FC<{ frameData: Frame; videoConfig?: VideoConfigRemotion
     }
   );
 
+  const sharedStyles = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain' as const,
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    transform: `scale(${scale})`,
+    opacity: opacity,
+    margin: 'auto',
+  };
+
   return (
-    <AbsoluteFill style={{ background: '#000' }}>
+    <AbsoluteFill style={{ background: '#fff' }}>
       {frameData.type === 'VIDEO' ? (
         <Video
           src={frameData.url}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center',
-            transform: `scale(${scale})`,
-            opacity: opacity
-          }}
+          style={sharedStyles}
         />
       ) : (
         <Img
           src={frameData.url}
           alt={frameData.text}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center',
-            transform: `scale(${scale})`,
-            opacity: opacity
-          }}
+          style={sharedStyles}
         />
       )}
       <SubtitleOverlay text={frameData.text} />
@@ -321,10 +329,9 @@ const SubtitleOverlay: React.FC<{ text: string }> = ({text}) => {
         height: '100%',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: '0 30px',
+        justifyContent: 'end',
+        padding: '0 30px 100px 30px',
         zIndex: 3,
-
       }}
     >
       <EnterpriseText text={text}/>
