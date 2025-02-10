@@ -329,8 +329,8 @@ const SubtitleOverlay: React.FC<{ text: string }> = ({text}) => {
         height: '100%',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'end',
-        padding: '0 30px 100px 30px',
+        justifyContent: 'center',
+        padding: '0 30px',
         zIndex: 3,
       }}
     >
