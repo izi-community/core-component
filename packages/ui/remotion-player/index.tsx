@@ -209,7 +209,7 @@ const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
   const frame = useCurrentFrame();
   const {fps, width, height} = useVideoConfig();
 
-  const baseFontSize = Math.min(width, height) * 0.035;
+  const baseFontSize = Math.min(width, height) * 0.045;
 
   const words = text.split(' ');
   const p = interpolate(
@@ -224,7 +224,7 @@ const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
   )
 
   return (
-    <div className={`${p ? 'bg-black/90' : ''} p-0.5 rounded-lg flex flex-wrap justify-center`}>
+    <div className={`p-0.5 rounded-lg flex flex-wrap justify-center`}>
       {words.map((word, i) => {
         const delay = i * 3;
         const progress = interpolate(
@@ -252,7 +252,7 @@ const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
               fontSize: `${baseFontSize}px`,
               fontWeight: 'bold',
               color: 'white',
-              textShadow: '0px 0px 4px rgba(0,0,0,1)'
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
             }}
           >
             {word}
@@ -292,7 +292,7 @@ const VideoFrame: React.FC<{ frameData: Frame; videoConfig?: VideoConfigRemotion
   const sharedStyles = {
     width: '100%',
     height: '100%',
-    objectFit: 'contain' as const,
+    objectFit: 'cover' as const,
     position: 'absolute' as const,
     top: 0,
     left: 0,
@@ -302,7 +302,7 @@ const VideoFrame: React.FC<{ frameData: Frame; videoConfig?: VideoConfigRemotion
   };
 
   return (
-    <AbsoluteFill style={{ background: '#fff' }}>
+    <AbsoluteFill style={{ background: '#222' }}>
       {frameData.type === 'VIDEO' ? (
         <Video
           src={frameData.url}
