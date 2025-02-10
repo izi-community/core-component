@@ -125,3 +125,13 @@
   --colorPrimaryHover: var(--colorPurple07);
   --colorPrimary: var(--colorPurple06);
 }
+
+body[client_theme="vtcizi"] {
+  --colorPrimaryForeDisabled: #24313d66;
+  --colorPrimaryFore: #fff;
+  --colorPrimaryDisabled: #f0f5fa12;
+  --colorPrimaryActive: #0085d6;
+  --colorPrimaryHover: #7dccff;
+  --colorPrimary: #0ea0ff;
+}
+
