@@ -11,14 +11,80 @@ interface LoadingState {
   audioProcessed: boolean;
   audioPreloaded: boolean;
   errors: string[];
+  totalDuration?: number;
 }
+
+// Helper function to get audio duration
+const getAudioDuration = async (url: string): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio();
+    audio.src = url;
+
+    audio.addEventListener('loadedmetadata', () => {
+      resolve(audio.duration);
+    });
+
+    audio.addEventListener('error', () => {
+      reject(new Error('Failed to load audio file'));
+    });
+  });
+};
+
+/**
+ * Estimates audio duration based on character count
+ * Using the baseline of 84 characters ≈ 5 seconds
+ *
+ * @param text The input text to estimate duration for
+ * @param wordsPerMinute Optional WPM rate (default calculated from baseline)
+ * @returns Estimated duration in seconds
+ */
+export const estimateAudioDuration = (text: string, wordsPerMinute?: number) => {
+  // Remove extra whitespace and normalize text
+  const normalizedText = text.trim().replace(/\s+/g, ' ');
+  const charCount = normalizedText.length;
+
+  // Using baseline: 84 chars ≈ 5 seconds
+  // So 1 char ≈ 0.0595 seconds
+  const CHARS_PER_SECOND = 84 / 3.5; // ≈ 16.8 chars per second
+
+  if (wordsPerMinute) {
+    // If WPM is provided, use that for calculation
+    const averageWordLength = 3.5; // Average English word length
+    const charsPerMinute = wordsPerMinute * averageWordLength;
+    const charsPerSecond = charsPerMinute / 60;
+    return charCount / charsPerSecond;
+  }
+
+  // Calculate duration using baseline ratio
+  const estimatedDuration = charCount / CHARS_PER_SECOND;
+
+  // Add a small buffer for very short texts (minimum 1 second)
+  return Math.max(1, estimatedDuration);
+};
+
+/**
+ * Estimates audio duration with frame timings
+ * Returns both duration and frame count
+ */
+export const estimateAudioDurationWithFrames = (text: string, fps: number = 30) => {
+  const duration = estimateAudioDuration(text);
+  const frames = Math.ceil(duration * fps);
+
+  return {
+    duration,
+    frames,
+    durationInFrames: frames
+  };
+};
 
 export const useSequentialLoader = (
   mediaSources: Array<{ url: string; type: string }>,
   audioProcessor: (text: string, voice: string, language: string) => Promise<any>,
   frames: any[],
   voiceConfig: { voice: string; language: string },
-  musicUrl?: string
+  musicUrl?: string,
+  voiceUrl?: string,
+  fps?: number,
 ) => {
   // Memoize input data to prevent unnecessary re-renders
   const memoizedSources = useMemo(() => mediaSources, [mediaSources]);
@@ -30,7 +96,8 @@ export const useSequentialLoader = (
     mediaLoaded: false,
     audioProcessed: false,
     audioPreloaded: false,
-    errors: []
+    errors: [],
+    totalDuration: 0
   });
 
   // Refs for tracking state and preventing duplicate processing
@@ -39,7 +106,8 @@ export const useSequentialLoader = (
     sources: null as any,
     frames: null as any,
     config: null as any,
-    music: null as any
+    music: null as any,
+    voice: null as any
   });
   const versionRef = useRef<number>(0);
   const cancelPreloadRef = useRef<Array<() => void>>([]);
@@ -53,7 +121,8 @@ export const useSequentialLoader = (
       sources: memoizedSources,
       frames: memoizedFrames,
       config: memoizedConfig,
-      music: musicUrl
+      music: musicUrl,
+      voice: voiceUrl
     };
 
     if (isEqual(prevDataRef.current, currentData)) {
@@ -62,7 +131,7 @@ export const useSequentialLoader = (
 
     prevDataRef.current = currentData;
     return true;
-  }, [memoizedSources, memoizedFrames, memoizedConfig, musicUrl]);
+  }, [memoizedSources, memoizedFrames, memoizedConfig, musicUrl, voiceUrl]);
 
   // Step 1: Load media (images/videos)
   const loadMedia = useCallback(async (version: number) => {
@@ -127,53 +196,78 @@ export const useSequentialLoader = (
   }, [memoizedSources]);
 
   // Step 2: Process audio files
+  // Step 2: Process audio files or handle voiceUrl
   const processAudio = useCallback(async (version: number) => {
     if (processingRef.current) return;
     processingRef.current = true;
 
     try {
-      const processedFrames = [];
+      let totalDuration = 0;
 
-      // Process frames sequentially instead of parallel
+      // Process frames sequentially if no voiceUrl
+      const processedFrames = [];
       for (const frame of memoizedFrames) {
-        // Check version before processing each frame
-        if (version !== versionRef.current) {
-          break;
-        }
+
+        if (version !== versionRef.current) break;
 
         try {
-          const result = await audioProcessor(
-            frame.text,
-            memoizedConfig.voice,
-            memoizedConfig.language
-          );
+          let result: any = {
+            audioUrl: '',
+            ttsDuration: 0,
+            ttsDurationInFrames: 0,
+          };
 
+          if(!voiceUrl) {
+            result = await audioProcessor(
+              frame.text,
+              memoizedConfig.voice,
+              memoizedConfig.language
+            )
+          } else {
+            const a = estimateAudioDurationWithFrames(frame.text, fps)
+            result = {
+              audioUrl: '',
+              ttsDuration: a.duration,
+              ttsDurationInFrames: a.durationInFrames,
+            }
+          }
+
+          totalDuration += result.ttsDuration;
           processedFrames.push({
             ...frame,
             audioUrl: result.audioUrl,
             ttsDuration: result.ttsDuration,
             ttsDurationInFrames: result.ttsDurationInFrames
           });
-
-          // Add small delay between requests if needed
-          // await new Promise(resolve => setTimeout(resolve, 100));
         } catch (error) {
           console.error(`Error processing frame: ${frame.text}`, error);
           continue;
         }
       }
+      processedFramesRef.current = processedFrames;
+
+      // Add music duration if exists
+      if (voiceUrl && version === versionRef.current) {
+        try {
+          const musicDuration = await getAudioDuration(voiceUrl);
+          totalDuration = Math.max(totalDuration, musicDuration);
+        } catch (error) {
+          console.warn('Failed to get music duration', error);
+        }
+      }
 
       // Only update state if version hasn't changed
       if (version === versionRef.current) {
-        processedFramesRef.current = processedFrames;
         audioUrlsRef.current = [
-          ...processedFrames.map(f => f?.audioUrl).filter(Boolean),
-          musicUrl
+          ...processedFramesRef.current.map(f => f?.audioUrl).filter(Boolean),
+          musicUrl,
+          voiceUrl,
         ].filter(Boolean);
 
         setState(prev => ({
           ...prev,
-          audioProcessed: true
+          audioProcessed: true,
+          totalDuration
         }));
       }
     } catch (error) {
@@ -186,7 +280,7 @@ export const useSequentialLoader = (
     } finally {
       processingRef.current = false;
     }
-  }, [memoizedFrames, audioProcessor, memoizedConfig, musicUrl]);
+  }, [memoizedFrames, audioProcessor, memoizedConfig, musicUrl, voiceUrl]);
 
   // Step 3: Preload audio files
   const preloadAudioFiles = useCallback(async (version: number) => {
@@ -266,6 +360,7 @@ export const useSequentialLoader = (
     errors: state.errors,
     version: state.version,
     processedFrames: processedFramesRef.current,
+    totalDuration: state.totalDuration,
     loadingState: {
       mediaLoaded: state.mediaLoaded,
       audioProcessed: state.audioProcessed,

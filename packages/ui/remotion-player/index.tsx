@@ -212,7 +212,7 @@ const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
 
   const baseFontSize = Math.min(width, height) * 0.045;
 
-  const words = text.split(' ');
+  const words = text?.split?.(' ') ?? [];
   const p = interpolate(
     frame,
     [0, 15],
@@ -608,13 +608,16 @@ const VideoComposition: React.FC<{
     errors,
     processedFrames,
     loadingState,
-    version
+    version,
+    totalDuration: totalDurationVideo
   } = useSequentialLoader(
     mediaSources,
     processAudio,
     data.frames,
     voiceConfig,
-    data?.videoConfig?.musicUrl
+    data?.videoConfig?.musicUrl,
+    data?.videoConfig?.voiceUrl,
+    fps,
   );
 
   // Calculate frame durations once everything is loaded
@@ -640,12 +643,17 @@ const VideoComposition: React.FC<{
 
   // Notify parent when everything is ready
   useEffect(() => {
+
     if (isFullyLoaded && frameDurations.length > 0) {
-      const totalDuration = frameDurations.reduce((sum, { duration }) => sum + duration, 0);
+      let totalDuration = frameDurations.reduce((sum, { duration }) => sum + duration, 0);
+
+      if(data?.videoConfig?.voiceUrl) {
+        // totalDuration = totalDurationVideo
+      }
       setLocalLoading(false);
       callback?.(frameDurations, fps, totalDuration);
     }
-  }, [isFullyLoaded, frameDurations, fps]);
+  }, [isFullyLoaded, frameDurations, fps, totalDurationVideo]);
 
   // Show loading state with details
   if (localLoading || !isFullyLoaded) {
@@ -839,7 +847,7 @@ const RemotionPlayer: React.FC<{
           },
           isPlaying,
         }}
-        durationInFrames={Math.round(totalDuration+5) ?? 1}
+        durationInFrames={Math.round(totalDuration+10) ?? 1}
         compositionWidth={parseInt(String(width)) || 720}
         compositionHeight={parseInt(String(height)) || 1080}
         fps={30}
@@ -850,7 +858,7 @@ const RemotionPlayer: React.FC<{
           overflow: 'hidden'
         }}
         controls={false}
-        loop={true}
+        loop={false}
         clickToPlay={false}
         spaceKeyToPlayOrPause={false}
         allowFullscreen
@@ -933,7 +941,6 @@ const VideoRemotionComponentPlayer = ({
   },setIsPauseLocalStore
 
                                       }: any) => {
-  console.log({autoPlay})
   const {ref, inView} = useInView({
     threshold: 0
   });
