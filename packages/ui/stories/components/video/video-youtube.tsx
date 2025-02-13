@@ -330,6 +330,15 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                         return
                       }
                       if(e) {
+                        (window as any).callbackApp?.postMessage?.({
+                          type: 'TRACK',
+                          payload: {
+                            event: 'video_complete_click',
+                            // @ts-ignore
+                            question_id: stories?.[currentIndex]?.question?.id,
+                          }
+                        });
+
                         setIsPauseLocalStore("No")
                         changeLocalPause(false)
                         changeIsOnUnstarted(false)
