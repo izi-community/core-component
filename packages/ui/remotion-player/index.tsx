@@ -196,6 +196,7 @@ export interface VideoConfigRemotion {
   voice: string;
   musicUrl: string;
   language?: string;
+  voiceUrl?: string;
 }
 
 interface VideoData {
@@ -301,6 +302,7 @@ const VideoFrame: React.FC<{ frameData: Frame; videoConfig?: VideoConfigRemotion
     margin: 'auto',
   };
 
+
   return (
     <AbsoluteFill style={{ background: '#222' }}>
       {frameData.type === 'VIDEO' ? (
@@ -316,6 +318,38 @@ const VideoFrame: React.FC<{ frameData: Frame; videoConfig?: VideoConfigRemotion
         />
       )}
       <SubtitleOverlay text={frameData.text} />
+    </AbsoluteFill>
+  );
+};
+
+const VideoAvatarFrame: React.FC<{ videoConfig?: VideoConfigRemotion;}> = ({videoConfig = undefined}) => {
+  const [size, setSize] = useState(80);
+  const { width, height } = useVideoConfig();
+
+  useEffect(() => {
+    const smallerDimension = Math.min(width, height);
+    setSize(Math.max(smallerDimension * 0.25, 80));
+  }, [width, height]);
+
+  return (
+    <AbsoluteFill style={{ zIndex: 2 }}>
+      <div style={{
+        position: 'absolute',
+        width: `${size}px`,
+        height: `${size}px`,
+        bottom: `${size}px`,
+        right: `${size * 0.08}px`,
+        opacity: 1,
+        borderRadius: `${size}px`,
+        overflow: 'hidden',
+      }}>
+        {videoConfig.voiceUrl && (
+          <Video
+            src={videoConfig.voiceUrl}
+          />
+        )
+        }
+      </div>
     </AbsoluteFill>
   );
 };
@@ -637,11 +671,11 @@ const VideoComposition: React.FC<{
         {frameDurations.map(({ duration, item, audioUrl }, idx) => (
           <Series.Sequence key={`${item.url}_${version}_${idx}`} durationInFrames={duration}>
             <VideoFrame videoConfig={data?.videoConfig} frameData={item} />
-            <AudioRemotion
-              volume={1}
-              src={audioUrl}
-              playsInline
-            />
+            {/*<AudioRemotion*/}
+            {/*  volume={1}*/}
+            {/*  src={audioUrl}*/}
+            {/*  playsInline*/}
+            {/*/>*/}
           </Series.Sequence>
         ))}
       </Series>
@@ -650,6 +684,11 @@ const VideoComposition: React.FC<{
           loop
           src={data?.videoConfig?.musicUrl}
           volume={0.1}
+        />
+      )}
+      {data?.videoConfig?.voiceUrl && (
+        <VideoAvatarFrame
+          videoConfig={data?.videoConfig}
         />
       )}
       {data?.videoConfig?.avatarTemplate && data?.videoConfig?.avatar && (
@@ -809,7 +848,7 @@ const RemotionPlayer: React.FC<{
           overflow: 'hidden'
         }}
         controls={false}
-        loop={false}
+        loop={true}
         clickToPlay={false}
         spaceKeyToPlayOrPause={false}
         allowFullscreen
@@ -899,6 +938,7 @@ const VideoRemotionComponentPlayer = ({
 
   if (!data?.videoId) return <div/>
 
+  console.log(data)
   return (
     <div className="w-full h-full" ref={ref}>
       {
