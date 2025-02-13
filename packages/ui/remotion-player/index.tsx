@@ -671,11 +671,13 @@ const VideoComposition: React.FC<{
         {frameDurations.map(({ duration, item, audioUrl }, idx) => (
           <Series.Sequence key={`${item.url}_${version}_${idx}`} durationInFrames={duration}>
             <VideoFrame videoConfig={data?.videoConfig} frameData={item} />
-            {/*<AudioRemotion*/}
-            {/*  volume={1}*/}
-            {/*  src={audioUrl}*/}
-            {/*  playsInline*/}
-            {/*/>*/}
+            {!data?.videoConfig?.voiceUrl && (
+              <AudioRemotion
+                volume={1}
+                src={audioUrl}
+                playsInline
+              />
+            )}
           </Series.Sequence>
         ))}
       </Series>
