@@ -282,13 +282,26 @@ export const useSequentialLoader = (
     }
   }, [memoizedFrames, audioProcessor, memoizedConfig, musicUrl, voiceUrl]);
 
+  const isIOS = () => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    return /iphone|ipad|ipod/.test(userAgent);
+  };
+
+  const isSafari = () => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    return userAgent.includes('safari') && !userAgent.includes('chrome');
+  };
+
   // Step 3: Preload audio files
   const preloadAudioFiles = useCallback(async (version: number) => {
     try {
       await Promise.all(
         audioUrlsRef.current.map(async (url) => {
           if (version !== versionRef.current) return;
-          await preloadAudio(url);
+
+          if(!(isIOS() || isSafari())) {
+            await preloadAudio(url);
+          }
         })
       );
 
