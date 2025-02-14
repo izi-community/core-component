@@ -299,13 +299,13 @@ export const useSequentialLoader = (
         audioUrlsRef.current.map(async (url) => {
           if (version !== versionRef.current) return;
 
-          try {
-            if(!(isIOS() || isSafari())) {
-              await preloadAudio(url);
-            }
-          } catch {
-
-          }
+          // try {
+          //   if(!(isIOS() || isSafari())) {
+          //     await preloadAudio(url);
+          //   }
+          // } catch {
+          //
+          // }
         })
       );
 
