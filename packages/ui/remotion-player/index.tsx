@@ -18,6 +18,7 @@ import { preloadAudio as preloadAudioRemotion, preloadVideo } from '@remotion/pr
 import {isEqual} from "lodash";
 import {GifOverlay} from "./remotion-lottie-sprite";
 import {useSequentialLoader} from "./useAssetPreloader";
+import {MyComposition} from "./demo";
 
 const mediaCache = new Map<string, HTMLImageElement | HTMLVideoElement>();
 
@@ -307,6 +308,11 @@ const VideoFrame: React.FC<{ frameData: Frame; videoConfig?: VideoConfigRemotion
     <AbsoluteFill style={{ background: '#222' }}>
       {frameData.type === 'VIDEO' ? (
         <Video
+          pauseWhenBuffering
+          playbackRate={1}
+          preload="auto"
+          muted={false}
+          playsInline
           src={frameData.url}
           style={sharedStyles}
         />
@@ -343,8 +349,24 @@ const VideoAvatarFrame: React.FC<{ videoConfig?: VideoConfigRemotion;}> = ({vide
         borderRadius: `${size}px`,
         overflow: 'hidden',
       }}>
-        {videoConfig.voiceUrl && (
+        {videoConfig.voiceUrl && videoConfig?.voiceUrl?.includes?.('.mp4') && (
           <Video
+            pauseWhenBuffering
+            playbackRate={1}
+            preload="auto"
+            muted={false}
+            playsInline
+            src={videoConfig.voiceUrl}
+          />
+        )
+        }
+        {videoConfig.voiceUrl && videoConfig?.voiceUrl?.includes?.('.mp3') && (
+          <AudioRemotion
+            playsInline
+            playbackRate={1}
+            preload="auto"
+            loop
+            pauseWhenBuffering
             src={videoConfig.voiceUrl}
           />
         )
@@ -405,177 +427,6 @@ const LoadingOverlay: React.FC = ({children}: {children: ReactNode}) => (
     </div>
   </AbsoluteFill>
 );
-
-
-// const VideoComposition: React.FC<{
-//   data: VideoData,
-//   isLoading?: boolean;
-//   isPlaying?: boolean;
-//   callback: (a: any, fps: any, totalDuration?: number, ) => void;
-// }> = ({data, callback, isLoading, isPlaying}) => {
-//   const transitionDuration = 20;
-//   const { fps } = useVideoConfig();
-//   const frame = useCurrentFrame();
-//   const [frameDurations, setFrameDurations] = useState<any[]>([]);
-//   const { processAudio } = useOptimizedAudioProcessing(fps);
-//   const prevDataRef = useRef<VideoData['frames']>();
-//   const [localLoading, setLocalLoading] = useState<boolean>(true);
-//   // const mediaSources = data.frames.map(frame => ({ url: frame.url, type: frame.type }));
-//   // const { mediaLoaded, errors } = useMediaPreloader(mediaSources);
-//   //
-//   // const memoizedProcessAudio = useCallback(processAudio, [fps]);
-//
-//   // Prepare media sources
-//   const mediaSources = data.frames.map(frame => ({ url: frame.url, type: frame.type }));
-//
-//   // Track audio processing state
-//   const [audioUrls, setAudioUrls] = useState<string[]>([]);
-//   const [audioProcessingComplete, setAudioProcessingComplete] = useState(false);
-//
-//   // Use the combined asset preloader
-//   const { isFullyLoaded, errors } = useAssetPreloader(mediaSources, audioUrls);
-//
-//   useEffect(() => {
-//     const processAllAudio = async () => {
-//       if (isEqual(data.frames, prevDataRef.current)) {
-//         return;
-//       }
-//
-//       try {
-//         const durations = await Promise.all(
-//           (data?.frames ?? []).map(async (item) => {
-//             const {
-//               audioUrl,
-//               ttsDurationInFrames,
-//               ttsDuration
-//             } = await processAudio(item?.text, data?.videoConfig?.voice ?? '', 'vi-VN-Neural2-A');
-//
-//             return {
-//               audioUrl,
-//               duration: ttsDurationInFrames + transitionDuration,
-//               audioDuration: ttsDuration,
-//               item
-//             };
-//           })
-//         );
-//
-//         const urls = durations.map(d => d.audioUrl).filter(Boolean);
-//         if (data?.videoConfig?.musicUrl) {
-//           urls.push(data.videoConfig.musicUrl);
-//         }
-//
-//         setAudioUrls(urls);
-//
-//         let currentFrame = 0;
-//         const calculatedFrameDurations = durations.map(({ duration, item, audioUrl, audioDuration }) => {
-//           const startFrame = currentFrame;
-//           currentFrame += duration;
-//           return { startFrame, endFrame: currentFrame, duration, item, audioUrl, audioDuration };
-//         });
-//
-//         setFrameDurations(calculatedFrameDurations);
-//         setAudioProcessingComplete(true);
-//
-//         const totalDuration = calculatedFrameDurations.reduce((sum, { duration }) => sum + duration, 0);
-//
-//         if (isFullyLoaded) {
-//           setLocalLoading(false);
-//           callback?.(calculatedFrameDurations, fps, totalDuration);
-//         }
-//
-//         prevDataRef.current = [...data.frames];
-//       } catch (error) {
-//         console.error('Error processing audio:', error);
-//         setLocalLoading(false);
-//       }
-//     };
-//
-//     processAllAudio();
-//   }, [data.frames, processAudio, fps, callback, isFullyLoaded]);
-//
-//   // useEffect(() => {
-//   //   const calculateFrameDurations = async () => {
-//   //     if (isEqual(data.frames, prevDataRef.current)) {
-//   //       return; // Data hasn't changed, no need to recalculate
-//   //     }
-//   //
-//   //     const durations = await Promise.all(
-//   //       (data?.frames ?? []).map(async (item, index) => {
-//   //         const {
-//   //           ttsDurationInFrames,
-//   //           audioUrl,
-//   //           ttsDuration
-//   //         } = await memoizedProcessAudio(item?.text, data?.videoConfig?.voice ?? '',  'vi-VN-Neural2-A');
-//   //
-//   //         const duration = ttsDurationInFrames + transitionDuration;
-//   //
-//   //         return { duration, item, audioUrl, id: index, audioDuration: ttsDuration, type: item?.type };
-//   //       })
-//   //     );
-//   //
-//   //     let currentFrame = 0;
-//   //     const calculatedFrameDurations = durations.map(({ duration, item, id, audioUrl, audioDuration, type }) => {
-//   //       const startFrame = currentFrame;
-//   //       currentFrame += duration;
-//   //       return { startFrame, endFrame: currentFrame, duration, item, id, audioUrl, audioDuration, type };
-//   //     });
-//   //
-//   //     setFrameDurations(calculatedFrameDurations);
-//   //
-//   //     const totalDuration = calculatedFrameDurations.reduce((sum, { duration }) => sum + duration, 0);
-//   //     callback?.(calculatedFrameDurations, fps, totalDuration);
-//   //
-//   //     prevDataRef.current = [...data.frames];
-//   //   };
-//   //
-//   //   calculateFrameDurations();
-//   // }, [data.frames, memoizedProcessAudio, transitionDuration, fps, callback]);
-//
-//   // if (!mediaLoaded || frameDurations.length === 0) {
-//   //   return <LoadingOverlay />;
-//   // }
-//
-//   useEffect(() => {
-//     if (isFullyLoaded && audioProcessingComplete) {
-//       setLocalLoading(false);
-//     }
-//   }, [isFullyLoaded, audioProcessingComplete]);
-//
-//   if (localLoading || !isFullyLoaded || !audioProcessingComplete) {
-//     return <LoadingOverlay />;
-//   }
-//
-//   if (errors.length > 0) {
-//     return <ErrorDisplay message="Failed to load some media assets" />;
-//   }
-//
-//   return (
-//     <AbsoluteFill>
-//       <Series>
-//         {frameDurations.map(({ duration, item, audioUrl, startFrame, audioDuration }, idx: number) => (
-//           <Series.Sequence key={`item_${idx}`} durationInFrames={duration}>
-//             <VideoFrame videoConfig={data?.videoConfig} frameData={item} />
-//             <AudioRemotion
-//               volume={1}
-//               src={audioUrl}
-//               playsInline
-//             />
-//           </Series.Sequence>
-//         ))}
-//       </Series>
-//       <AudioRemotion
-//         loop
-//         src={data?.videoConfig?.musicUrl}
-//         volume={0.1}
-//       />
-//       {
-//         data?.videoConfig?.avatarTemplate && (
-//           <GifOverlay videoConfig={data?.videoConfig} isPlaying={isPlaying} />
-//         )
-//       }
-//     </AbsoluteFill>
-//   );
-// };
 
 const VideoComposition: React.FC<{
   data: VideoData,
@@ -684,6 +535,10 @@ const VideoComposition: React.FC<{
                 volume={1}
                 src={audioUrl}
                 playsInline
+                playbackRate={1}
+                preload="auto"
+                loop
+                pauseWhenBuffering
               />
             )}
           </Series.Sequence>
@@ -693,7 +548,7 @@ const VideoComposition: React.FC<{
         <AudioRemotion
           loop
           src={data?.videoConfig?.musicUrl}
-          volume={0.1}
+          volume={1}
         />
       )}
       {data?.videoConfig?.voiceUrl && (
@@ -847,7 +702,7 @@ const RemotionPlayer: React.FC<{
           },
           isPlaying,
         }}
-        durationInFrames={Math.round(totalDuration+10) ?? 1}
+        durationInFrames={Math.round(totalDuration + 10) ?? 1}
         compositionWidth={parseInt(String(width)) || 720}
         compositionHeight={parseInt(String(height)) || 1080}
         fps={30}
