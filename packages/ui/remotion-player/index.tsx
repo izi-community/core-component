@@ -356,6 +356,7 @@ const VideoAvatarFrame: React.FC<{ videoConfig?: VideoConfigRemotion;}> = ({vide
             preload="auto"
             muted={false}
             playsInline
+            volume={1}
             src={videoConfig.voiceUrl}
           />
         )
