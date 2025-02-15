@@ -37,7 +37,7 @@ const WrapperPlayChild = ({children, selectedStory, classNames = {}, width, heig
       css={css`
               overflow: hidden;
               @media screen and (max-width: 375px) {
-                  padding-bottom: ${searchParams.get('footer') ? 0 : 51}px !important;
+                  //padding-bottom: ${searchParams.get('footer') ? 0 : 51}px !important;
               }
           `}
       className={`${styles.main} ${classNames?.main || ''} z-[1] flex flex-col animate__animated animate__faster ${animation}`}
