@@ -1,6 +1,6 @@
 import { AbsoluteFill, Img, staticFile, Audio, Sequence, Video, useCurrentFrame, useVideoConfig, interpolate, Easing } from "remotion";
-import React from "react";
-
+import React, {useEffect, useState} from "react";
+import { preloadAudio, preloadVideo } from "@remotion/preload";
 
 const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
   const frame = useCurrentFrame();
@@ -108,6 +108,7 @@ const VideoFrame: React.FC<{ frameData: any;}> = ({frameData}) => {
           playbackRate={1}
           preload="auto"
           muted={false}
+          volume={1}
           src={frameData.url}
           style={sharedStyles}
         />
@@ -142,45 +143,68 @@ const SubtitleOverlay: React.FC<{ text: string }> = ({text}) => {
   );
 };
 
-// Thời gian mỗi frame hiển thị (5 giây)
-const frameDuration = 4.5 * 30; // 5 giây * 30fps
+const isVideo = (url: string) => url?.match(/\.(mp4|mov|webm|mkv)$/i);
 
-export const MyComposition: React.FC = ({data: videoData}: {data?: any}) => {
+export const MyComposition: React.FC<{ data?: any; onReady?: (status: boolean) => void }> = ({ data: videoData, onReady }) => {
+  const { fps } = useVideoConfig();
+  const frameDuration = 4.5 * fps; // 4.5 giây mỗi frame
+
+  const musicUrl = videoData?.videoConfig?.musicUrl;
+  const voiceUrl = videoData?.videoConfig?.voiceUrl;
+
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (musicUrl) preloadAudio(musicUrl);
+    if (voiceUrl) isVideo(voiceUrl) ? preloadVideo(voiceUrl) : preloadAudio(voiceUrl);
+
+    setLoaded(true);
+    onReady?.(true);
+  }, [musicUrl, voiceUrl, onReady]);
+
+  if (!loaded) {
+    return (
+      <AbsoluteFill style={{ backgroundColor: "black", color: "white", justifyContent: "center", alignItems: "center" }}>
+        Loading...
+      </AbsoluteFill>
+    );
+  }
+
   return (
     <AbsoluteFill>
       {/* Nhạc nền */}
-      <Audio
-        playbackRate={1}
-        preload="auto"
-        loop
-        pauseWhenBuffering
-        src={videoData.videoConfig.musicUrl} volume={1} playsInline/>
+      {(musicUrl && !isVideo(voiceUrl)) && <Audio src={musicUrl} volume={1} playsInline loop pauseWhenBuffering />}
 
       {/* Hiển thị từng frame */}
-      {videoData.frames.map((frame: any, index: any) => (
+      {videoData.frames.map((frame: any, index: number) => (
         <Sequence from={index * frameDuration} durationInFrames={frameDuration} key={index}>
           <VideoFrame frameData={frame} />
         </Sequence>
       ))}
-      {/* Avatar (nếu bật) */}
-      {videoData.videoConfig.voiceUrl && (
-        <Video
-          pauseWhenBuffering
-          playsInline
-          playbackRate={1}
-          preload="auto"
-          muted={false}
-          src={videoData.videoConfig.voiceUrl}
-          style={{
-            position: "absolute",
-            bottom: "10%",
-            right: "5%",
-            width: "120px",
-            height: "120px",
-            borderRadius: "50%",
-          }}
-        />
-      )}
+
+      {/* Avatar hoặc Video voiceUrl */}
+      {voiceUrl &&
+        (isVideo(voiceUrl) ? (
+          <Video
+            pauseWhenBuffering
+            playsInline
+            playbackRate={1}
+            volume={1}
+            preload="auto"
+            muted={false}
+            src={voiceUrl}
+            style={{
+              position: "absolute",
+              bottom: "10%",
+              right: "5%",
+              width: "120px",
+              height: "120px",
+              borderRadius: "50%",
+            }}
+          />
+        ) : (
+          <Audio src={voiceUrl} volume={1} preload="auto" playsInline pauseWhenBuffering />
+        ))}
     </AbsoluteFill>
   );
 };

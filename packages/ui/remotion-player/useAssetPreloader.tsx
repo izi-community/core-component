@@ -298,10 +298,10 @@ export const useSequentialLoader = (
       await Promise.all(
         audioUrlsRef.current.map(async (url) => {
           if (version !== versionRef.current) return;
-
+          await preloadAudio(url);
           // try {
           //   if(!(isIOS() || isSafari())) {
-          //     await preloadAudio(url);
+          //
           //   }
           // } catch {
           //
@@ -342,16 +342,15 @@ export const useSequentialLoader = (
     }));
 
     const loadSequentially = async () => {
+      // Step 3: Preload audio
+      await preloadAudioFiles(version);
+      // Step 2: Load media
+      await loadMedia(version);
+      if (version !== versionRef.current) return;
       // Step 1: Process audio first (potentially slowest operation)
       await processAudio(version);
       if (version !== versionRef.current) return;
 
-      // Step 2: Load media
-      await loadMedia(version);
-      if (version !== versionRef.current) return;
-
-      // Step 3: Preload audio
-      await preloadAudioFiles(version);
     };
 
     loadSequentially();
