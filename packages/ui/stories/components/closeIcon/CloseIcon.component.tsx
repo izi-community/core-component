@@ -9,10 +9,10 @@ export const CloseIcon = (props: any) => {
   return (
     <Button
       onClick={props?.onClick}
-      csss={css`background: transparent !important;`}
+      csss={css`background: rgba(255, 255, 255, 0.95) !important;`}
       //@ts-ignore
       icon={<SVGMenu css={css`path {
-            fill: var(--colorTypographyPlaceholder);
+            fill: var(--colorPrimaryActive);
         }`} width={28} height={28}/>}/>
   );
 }

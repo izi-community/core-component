@@ -29,7 +29,7 @@ export function Progress(props: IProgressProps) {
       }
     `} className="flex w-full items-center space-x-3 z-20 lg:py-3 pr-1 pl-1">
 
-      <CloseIcon onClick={props?.onClick}/>
+      <CloseIcon fill="#fff" onClick={props?.onClick}/>
       <div className="flex-1 relative">
         <div
           className={`${styles.wrapper} ${classNames?.progressContainer || ''}`}
