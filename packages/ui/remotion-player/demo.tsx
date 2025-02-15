@@ -103,6 +103,11 @@ const VideoFrame: React.FC<{ frameData: any;}> = ({frameData}) => {
     <AbsoluteFill style={{ background: '#222' }}>
       {frameData.type === 'VIDEO' ? (
         <Video
+          playsInline
+          pauseWhenBuffering
+          playbackRate={1}
+          preload="auto"
+          muted={false}
           src={frameData.url}
           style={sharedStyles}
         />
@@ -161,6 +166,7 @@ export const MyComposition: React.FC = ({data: videoData}: {data?: any}) => {
       {videoData.videoConfig.voiceUrl && (
         <Video
           pauseWhenBuffering
+          playsInline
           playbackRate={1}
           preload="auto"
           muted={false}

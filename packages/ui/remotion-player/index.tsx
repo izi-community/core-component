@@ -323,7 +323,7 @@ const VideoFrame: React.FC<{ frameData: Frame; videoConfig?: VideoConfigRemotion
           style={sharedStyles}
         />
       )}
-      <SubtitleOverlay text={frameData.text} />
+      <SubtitleOverlay isvtc={!!videoConfig?.voiceUrl} text={frameData.text} />
     </AbsoluteFill>
   );
 };
@@ -343,8 +343,8 @@ const VideoAvatarFrame: React.FC<{ videoConfig?: VideoConfigRemotion;}> = ({vide
         position: 'absolute',
         width: `${size}px`,
         height: `${size}px`,
-        bottom: `${size}px`,
-        right: `${size * 0.08}px`,
+        bottom: `${size*3}px`,
+        right: `${size * 0.15}px`,
         opacity: 1,
         borderRadius: `${size}px`,
         overflow: 'hidden',
@@ -362,6 +362,7 @@ const VideoAvatarFrame: React.FC<{ videoConfig?: VideoConfigRemotion;}> = ({vide
         }
         {videoConfig.voiceUrl && videoConfig?.voiceUrl?.includes?.('.mp3') && (
           <AudioRemotion
+            volume={1}
             playsInline
             playbackRate={1}
             preload="auto"
@@ -376,7 +377,7 @@ const VideoAvatarFrame: React.FC<{ videoConfig?: VideoConfigRemotion;}> = ({vide
   );
 };
 
-const SubtitleOverlay: React.FC<{ text: string }> = ({text}) => {
+const SubtitleOverlay: React.FC<{ text: string, isvtc?:boolean }> = ({text, isvtc = false}) => {
   return (
     <AbsoluteFill
       style={{
@@ -385,8 +386,8 @@ const SubtitleOverlay: React.FC<{ text: string }> = ({text}) => {
         height: '100%',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: '0 30px',
+        justifyContent: 'end',
+        padding: '0 30px 120px 30px',
         zIndex: 3,
       }}
     >
@@ -555,6 +556,24 @@ const VideoComposition: React.FC<{
         <VideoAvatarFrame
           videoConfig={data?.videoConfig}
         />
+      )}
+
+      {data?.videoConfig?.voiceUrl && (
+        <AbsoluteFill style={{
+          display: 'flex',
+          justifyContent: 'end',
+          flexDirection: 'column',
+          zIndex: 0
+        }}>
+          <img
+            src="/pa.png"
+            style={{
+              width: '100%',
+              height: 'auto',
+              objectFit: 'cover'
+            }}
+          />
+        </AbsoluteFill>
       )}
       {data?.videoConfig?.avatarTemplate && data?.videoConfig?.avatar && (
         <GifOverlay videoConfig={data?.videoConfig} isPlaying={isPlaying} />
