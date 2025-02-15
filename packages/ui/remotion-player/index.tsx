@@ -360,18 +360,6 @@ const VideoAvatarFrame: React.FC<{ videoConfig?: VideoConfigRemotion;}> = ({vide
           />
         )
         }
-        {videoConfig.voiceUrl && videoConfig?.voiceUrl?.includes?.('.mp3') && (
-          <AudioRemotion
-            volume={1}
-            playsInline
-            playbackRate={1}
-            preload="auto"
-            loop
-            pauseWhenBuffering
-            src={videoConfig.voiceUrl}
-          />
-        )
-        }
       </div>
     </AbsoluteFill>
   );
@@ -537,7 +525,6 @@ const VideoComposition: React.FC<{
                 src={audioUrl}
                 playsInline
                 playbackRate={1}
-                preload="auto"
                 loop
                 pauseWhenBuffering
               />
@@ -545,13 +532,23 @@ const VideoComposition: React.FC<{
           </Series.Sequence>
         ))}
       </Series>
-      {data?.videoConfig?.musicUrl && (
+      {(data?.videoConfig?.musicUrl && !data?.videoConfig?.voiceUrl?.includes?.('.mp3')) && (
         <AudioRemotion
           loop
           src={data?.videoConfig?.musicUrl}
           volume={1}
         />
       )}
+      {data?.videoConfig.voiceUrl && data?.videoConfig?.voiceUrl?.includes?.('.mp3') && (
+        <AudioRemotion
+          playsInline
+          playbackRate={1}
+          loop
+          src={data?.videoConfig?.voiceUrl}
+          volume={1}
+        />
+      )
+      }
       {data?.videoConfig?.voiceUrl && (
         <VideoAvatarFrame
           videoConfig={data?.videoConfig}
