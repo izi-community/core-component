@@ -564,7 +564,7 @@ const VideoComposition: React.FC<{
           zIndex: 0
         }}>
           <img
-            src="/pa.png"
+            src="https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/teachizi/background/pa.png"
             style={{
               width: '100%',
               height: 'auto',

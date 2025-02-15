@@ -14,6 +14,7 @@ import Typewriter from "./typewriter";
 import { useStoriesContext } from "../../hooks";
 import VideoRemotionComponentPlayer from "../../../remotion-player";
 import { useLocalStorage } from "usehooks-ts";
+import {useSearchParams} from "react-router-dom";
 
 type VideoYoutubeContextProps = {
   media?: any;
@@ -52,6 +53,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
   const [currentTime, changeCurrentTime] = useState(0)
   const [orientation, setOrientation] = useState<string>('');
   const timerRef: any = useRef<undefined>();
+  let [searchParams, setSearchParams] = useSearchParams();
 
   const handleProgress = (state: any) => {
     changeCurrentTime(state.playedSeconds);
@@ -159,6 +161,8 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
 
   const isFullscreenLayout = useMemo(() => props?.fullScreen === true, [props?.fullScreen]);
 
+  const isVTCiZi = useMemo(() => searchParams.get('client_id') === 'VTCIZI', [searchParams]);
+
   return (
     <div
       onClick={handlePauseVideo}
@@ -170,13 +174,14 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
       <div
         css={css`
             video {
-                ${isFullscreenLayout ? `object-fit: ${orientation === 'landscape' ? 'contain' : 'cover'};` : `object-fit: ${orientation === 'vertical' ? 'contain' : 'cover'};`}
+                ${isFullscreenLayout ? `object-fit: ${orientation === 'landscape' ? 'contain' : 'contain'};` : `object-fit: ${orientation === 'vertical' ? 'contain' : 'contain'};`}
+                object-position: center;
             }
 
             width: 100%;
             height: 100%;
             position: relative;
-  
+            ${isVTCiZi ? 'background:linear-gradient(180deg, #0b2b7e 0%, #0b2b7e 100%);': ''}
             iframe {
                 pointer-events: ${isShowingControls ? 'auto' : 'none'};
             }

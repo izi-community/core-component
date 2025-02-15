@@ -1,6 +1,17 @@
-import { AbsoluteFill, Img, staticFile, Audio, Sequence, Video, useCurrentFrame, useVideoConfig, interpolate, Easing } from "remotion";
-import React, {useEffect, useState} from "react";
-import { preloadAudio, preloadVideo } from "@remotion/preload";
+import {
+  AbsoluteFill,
+  Img,
+  staticFile,
+  Audio,
+  Sequence,
+  Video,
+  useCurrentFrame,
+  useVideoConfig,
+  interpolate,
+  Easing,
+  Series
+} from "remotion";
+import React, {useEffect, useMemo, useState} from "react";
 
 const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
   const frame = useCurrentFrame();
@@ -60,9 +71,9 @@ const EnterpriseText: React.FC<{ text: string }> = ({text}) => {
   );
 };
 
-const VideoFrame: React.FC<{ frameData: any;}> = ({frameData}) => {
+const VideoFrame: React.FC<{ frameData: any; }> = ({frameData}) => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
+  const {fps, durationInFrames} = useVideoConfig();
 
   const progress = interpolate(
     frame,
@@ -100,7 +111,7 @@ const VideoFrame: React.FC<{ frameData: any;}> = ({frameData}) => {
 
 
   return (
-    <AbsoluteFill style={{ background: '#222' }}>
+    <AbsoluteFill style={{background: '#222'}}>
       {frameData.type === 'VIDEO' ? (
         <Video
           playsInline
@@ -119,7 +130,7 @@ const VideoFrame: React.FC<{ frameData: any;}> = ({frameData}) => {
           style={sharedStyles}
         />
       )}
-      <SubtitleOverlay text={frameData.text} />
+      <SubtitleOverlay text={frameData.text}/>
     </AbsoluteFill>
   );
 };
@@ -133,8 +144,8 @@ const SubtitleOverlay: React.FC<{ text: string }> = ({text}) => {
         height: '100%',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: '0 30px',
+        justifyContent: 'end',
+        padding: '0 30px 180px 30px',
         zIndex: 3,
       }}
     >
@@ -145,65 +156,149 @@ const SubtitleOverlay: React.FC<{ text: string }> = ({text}) => {
 
 const isVideo = (url: string) => url?.match(/\.(mp4|mov|webm|mkv)$/i);
 
-export const MyComposition: React.FC<{ data?: any; onReady?: (status: boolean) => void }> = ({ data: videoData, onReady }) => {
-  const { fps } = useVideoConfig();
-  const frameDuration = 4.5 * fps; // 4.5 giây mỗi frame
-
-  const musicUrl = videoData?.videoConfig?.musicUrl;
-  const voiceUrl = videoData?.videoConfig?.voiceUrl;
-
-  const [loaded, setLoaded] = useState(false);
+const VideoAvatarFrame: React.FC<{ voiceUrl?: string;}> = ({voiceUrl = undefined}) => {
+  const [size, setSize] = useState(80);
+  const { width, height } = useVideoConfig();
 
   useEffect(() => {
-    if (musicUrl) preloadAudio(musicUrl);
-    if (voiceUrl) isVideo(voiceUrl) ? preloadVideo(voiceUrl) : preloadAudio(voiceUrl);
+    const smallerDimension = Math.min(width, height);
+    setSize(Math.max(smallerDimension * 0.25, 80));
+  }, [width, height]);
 
-    setLoaded(true);
-    onReady?.(true);
-  }, [musicUrl, voiceUrl, onReady]);
+  return (
+    <AbsoluteFill style={{ zIndex: 2 }}>
+      <div style={{
+        position: 'absolute',
+        width: `${size}px`,
+        height: `${size}px`,
+        bottom: `${size*3}px`,
+        right: `${size * 0.15}px`,
+        opacity: 1,
+        borderRadius: `${size}px`,
+        overflow: 'hidden',
+      }}>
+        <Video
+          pauseWhenBuffering
+          playsInline
+          playbackRate={1}
+          volume={1}
+          preload="auto"
+          muted={false}
+          src={voiceUrl}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
+        />
+      </div>
+    </AbsoluteFill>
+  );
+};
 
-  if (!loaded) {
-    return (
-      <AbsoluteFill style={{ backgroundColor: "black", color: "white", justifyContent: "center", alignItems: "center" }}>
-        Loading...
-      </AbsoluteFill>
-    );
+interface VideoData {
+  frames: any[];
+  musicUrl?: string;
+  voiceUrl?: string;
+}
+
+export const estimateAudioDuration = (text: string, wordsPerMinute?: number) => {
+  // Remove extra whitespace and normalize text
+  const normalizedText = text.trim().replace(/\s+/g, ' ');
+  const charCount = normalizedText.length;
+
+  // Using baseline: 84 chars ≈ 5 seconds
+  // So 1 char ≈ 0.0595 seconds
+  const CHARS_PER_SECOND = 84 / 4.5; // ≈ 16.8 chars per second
+
+  if (wordsPerMinute) {
+    // If WPM is provided, use that for calculation
+    const averageWordLength = 4.5; // Average English word length
+    const charsPerMinute = wordsPerMinute * averageWordLength;
+    const charsPerSecond = charsPerMinute / 60;
+    return charCount / charsPerSecond;
   }
+
+  // Calculate duration using baseline ratio
+  const estimatedDuration = charCount / CHARS_PER_SECOND;
+
+  // Add a small buffer for very short texts (minimum 1 second)
+  return Math.max(1, estimatedDuration);
+};
+
+export const estimateAudioDurationWithFrames = (text: string, fps: number = 30) => {
+  const duration = estimateAudioDuration(text);
+  const frames = Math.ceil(duration * fps);
+
+  return {
+    duration,
+    frames,
+    durationInFrames: frames
+  };
+};
+
+export const MyComposition: React.FC<{ data?: VideoData}> = ({
+                                                                                               data: videoData,
+                                                                                             }) => {
+  const {fps} = useVideoConfig();
+
+  const musicUrl = videoData?.musicUrl;
+  const voiceUrl = videoData?.voiceUrl;
+
+  const frameDurations = useMemo(() => videoData?.frames?.reduce((arr, frame) => {
+    const a = estimateAudioDurationWithFrames(frame.text, fps)
+    return [
+      ...arr,
+      {
+        ...frame,
+        duration: a?.durationInFrames,
+      }
+    ]
+  }, []), [videoData])
+
+  console.log(frameDurations.reduce((arr: number, frame: any) => arr+frame.duration, 0))
 
   return (
     <AbsoluteFill>
+      <Series>
       {/* Nhạc nền */}
-      {(musicUrl && !isVideo(voiceUrl)) && <Audio src={musicUrl} volume={1} playsInline loop pauseWhenBuffering />}
+      {(musicUrl && !isVideo(voiceUrl)) && <Audio src={musicUrl} volume={1} playsInline loop pauseWhenBuffering/>}
 
       {/* Hiển thị từng frame */}
-      {videoData.frames.map((frame: any, index: number) => (
-        <Sequence from={index * frameDuration} durationInFrames={frameDuration} key={index}>
-          <VideoFrame frameData={frame} />
-        </Sequence>
-      ))}
+      {frameDurations.map((frame: any, index: number) => {
 
+        return (
+          <Series.Sequence durationInFrames={frame.duration} key={index}>
+            <VideoFrame frameData={frame}/>
+          </Series.Sequence>
+        )
+      })}
+      </Series>
+      {voiceUrl && (
+        <AbsoluteFill style={{
+          display: 'flex',
+          justifyContent: 'end',
+          flexDirection: 'column',
+          height: '100%',
+          width: '100%',
+          zIndex: 0
+        }}>
+          <img
+            src="https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/teachizi/background/pa.png"
+            style={{
+              width: '100%',
+              height: 'auto',
+              objectFit: 'cover'
+            }}
+          />
+        </AbsoluteFill>
+      )}
       {/* Avatar hoặc Video voiceUrl */}
       {voiceUrl &&
         (isVideo(voiceUrl) ? (
-          <Video
-            pauseWhenBuffering
-            playsInline
-            playbackRate={1}
-            volume={1}
-            preload="auto"
-            muted={false}
-            src={voiceUrl}
-            style={{
-              position: "absolute",
-              bottom: "10%",
-              right: "5%",
-              width: "120px",
-              height: "120px",
-              borderRadius: "50%",
-            }}
-          />
+          <VideoAvatarFrame voiceUrl={voiceUrl}/>
         ) : (
-          <Audio src={voiceUrl} volume={1} preload="auto" playsInline pauseWhenBuffering />
+          <Audio src={voiceUrl} volume={1} preload="auto" playsInline pauseWhenBuffering/>
         ))}
     </AbsoluteFill>
   );
