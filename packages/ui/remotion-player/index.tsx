@@ -532,13 +532,13 @@ const VideoComposition: React.FC<{
           </Series.Sequence>
         ))}
       </Series>
-      {(data?.videoConfig?.musicUrl && !data?.videoConfig?.voiceUrl?.includes?.('.mp3')) && (
-        <AudioRemotion
-          loop
-          src={data?.videoConfig?.musicUrl}
-          volume={1}
-        />
-      )}
+      {/*{(data?.videoConfig?.musicUrl && !data?.videoConfig?.voiceUrl?.includes?.('.mp3')) && (*/}
+      {/*  <AudioRemotion*/}
+      {/*    loop*/}
+      {/*    src={data?.videoConfig?.musicUrl}*/}
+      {/*    volume={1}*/}
+      {/*  />*/}
+      {/*)}*/}
       {data?.videoConfig.voiceUrl && data?.videoConfig?.voiceUrl?.includes?.('.mp3') && (
         <AudioRemotion
           playsInline
