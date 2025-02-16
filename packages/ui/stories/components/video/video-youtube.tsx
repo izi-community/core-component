@@ -444,7 +444,9 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
               >
               </Button>
             </div>
-            {
+
+            {/* Progressing Video */}
+            {/* {
               ['video', 'VIDEO_MEDIA', "VIDEO_UPLOAD_MEDIA"].includes(media?.type) && (
                 <>
                   {
@@ -487,7 +489,7 @@ const VideoYoutubeContext = ({media, className = '', ...props}: VideoYoutubeCont
                   }
                 </>
               )
-            }
+            } */}
           </>
 
           // <div
