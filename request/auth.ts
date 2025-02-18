@@ -5,7 +5,7 @@ interface OutgoingMessage {
 }
 
 interface IncomingMessage {
-  responseId?: string;  // Assuming this is optional or might not exist
+  responseId?: string;
   payload: Payload;
 }
 
