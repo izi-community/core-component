@@ -1,4 +1,3 @@
-// Define the structure of the message
 interface OutgoingMessage {
   action: string;
   requestId: string;
