@@ -526,7 +526,7 @@ const VideoComposition: React.FC<{
                 src={audioUrl}
                 playsInline
                 playbackRate={1}
-                loop
+                // loop
                 pauseWhenBuffering
               />
             )}
