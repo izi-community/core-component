@@ -166,8 +166,8 @@ export const getTTSAudioUrl = async (text: string, voice_name = 'vi-VN-Neural2-D
     },
     body: JSON.stringify({
       script: text,
-      language_code: 'Vietnamese',
-      voice: 'vi-VN-Neural2-A'
+      language_code: language ?? 'Vietnamese',
+      voice: voice_name ?? 'vi-VN-Neural2-A'
     })
   }).then(result => result.json());
 
