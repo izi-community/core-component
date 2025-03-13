@@ -115,7 +115,7 @@ const GifOverlay: React.FC<{ videoConfig?: VideoConfigRemotion; isPlaying?: bool
 
   useEffect(() => {
     const smallerDimension = Math.min(width, height);
-    setSize(Math.max(smallerDimension * 0.5, 140));
+    setSize(Math.max(smallerDimension * 0.3, 140));
   }, [width, height]);
 
   const url = useMemo(() => {
@@ -146,7 +146,7 @@ const GifOverlay: React.FC<{ videoConfig?: VideoConfigRemotion; isPlaying?: bool
           position: 'absolute',
           width: `${size}px`,
           height: `${size}px`,
-          bottom: `${size * 0.16}px`,
+          bottom: `${size*1.8}px`,
           right: `${size * 0.08}px`,
           opacity: 1,
         }}

@@ -303,6 +303,15 @@ const VideoFrame: React.FC<{ frameData: Frame; videoConfig?: VideoConfigRemotion
     margin: 'auto',
   };
 
+  const url = useMemo(() => {
+    if(frameData.type === 'IMAGE') {
+      if(frameData?.url?.includes?.('assets.lummi.ai')) {
+        return `${frameData?.url}?auto=format&w=720`
+      }
+    }
+
+      return frameData?.url
+  }, [frameData?.url, frameData.type]);
 
   return (
     <AbsoluteFill style={{ background: '#222' }}>
@@ -313,12 +322,12 @@ const VideoFrame: React.FC<{ frameData: Frame; videoConfig?: VideoConfigRemotion
           preload="auto"
           muted={false}
           playsInline
-          src={frameData.url}
+          src={url}
           style={sharedStyles}
         />
       ) : (
         <Img
-          src={frameData.url}
+          src={url}
           alt={frameData.text}
           style={sharedStyles}
         />
@@ -439,8 +448,8 @@ const VideoComposition: React.FC<{
 
   // Configure voice settings
   const voiceConfig = useMemo(() => ({
-    voice: data?.videoConfig?.voice ?? '',
-    language: 'vi-VN-Neural2-A'
+    voice: data?.videoConfig?.voice ?? 'vi-VN-Neural2-A',
+    language: data?.videoConfig?.language ?? 'Vietnamese',
   }), [data?.videoConfig?.voice]);
 
   // Use the sequential loader
@@ -556,23 +565,38 @@ const VideoComposition: React.FC<{
         />
       )}
 
-      {data?.videoConfig?.voiceUrl && (
-        <AbsoluteFill style={{
-          display: 'flex',
-          justifyContent: 'end',
-          flexDirection: 'column',
-          zIndex: 0
-        }}>
-          <img
-            src="https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/teachizi/background/pa.png"
-            style={{
-              width: '100%',
-              height: 'auto',
-              objectFit: 'cover'
-            }}
-          />
-        </AbsoluteFill>
-      )}
+      {/*{data?.videoConfig?.voiceUrl && (*/}
+      {/*  <AbsoluteFill style={{*/}
+      {/*    display: 'flex',*/}
+      {/*    justifyContent: 'end',*/}
+      {/*    flexDirection: 'column',*/}
+      {/*    zIndex: 0*/}
+      {/*  }}>*/}
+      {/*    <img*/}
+      {/*      src="https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/teachizi/background/pa.png"*/}
+      {/*      style={{*/}
+      {/*        width: '100%',*/}
+      {/*        height: 'auto',*/}
+      {/*        objectFit: 'cover'*/}
+      {/*      }}*/}
+      {/*    />*/}
+      {/*  </AbsoluteFill>*/}
+      {/*)}*/}
+      <AbsoluteFill style={{
+        display: 'flex',
+        justifyContent: 'end',
+        flexDirection: 'column',
+        zIndex: 0
+      }}>
+        <img
+          src="https://izi-prod-bucket.s3.ap-southeast-1.amazonaws.com/teachizi/background/pa.png"
+          style={{
+            width: '100%',
+            height: 'auto',
+            objectFit: 'cover'
+          }}
+        />
+      </AbsoluteFill>
       {data?.videoConfig?.avatarTemplate && data?.videoConfig?.avatar && (
         <GifOverlay videoConfig={data?.videoConfig} isPlaying={isPlaying} />
       )}
