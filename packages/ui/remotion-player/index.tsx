@@ -103,57 +103,189 @@ function simpleHash(str: string) {
   return hash;
 }
 
-const audioCache = new Map();
-const useOptimizedAudioProcessing = (fps: number) => {
+interface AudioData {
+  url: string;
+  duration: number;
+  buffer?: AudioBuffer;
+  loaded: boolean;
+  error?: boolean;
+}
+
+interface ProcessedAudio {
+  ttsDuration: number;
+  ttsDurationInFrames: number;
+  audioUrl: string;
+  audioBuffer?: AudioBuffer;
+}
+
+const audioCache = new Map<string, AudioData>();
+const MAX_RETRIES = 2;
+export const useOptimizedAudioProcessing = (fps: number) => {
   const audioContext = useRef<AudioContext | null>(null);
-  const BUFFER_DURATION = 0.1; // 100ms buffer
+  const [isAllAudioLoaded, setIsAllAudioLoaded] = useState(false);
+  const pendingAudios = useRef<Set<string>>(new Set());
+  const retryCount = useRef<Map<string, number>>(new Map());
+  const audioQueue = useRef<{
+    cacheKey: string;
+    subtitle: string;
+    voice: string;
+    language: string;
+    duration: number;
+    audioUrl?: string;
+  }[]>([]);
+  const isProcessing = useRef<boolean>(false);
+  const BUFFER_DURATION = 0.1;
+
+  const checkAllAudiosLoaded = useCallback(() => {
+    const allLoaded = Array.from(pendingAudios.current).every(key => {
+      const cached = audioCache.get(key);
+      return cached?.loaded || cached?.error;
+    });
+
+    setIsAllAudioLoaded(allLoaded);
+    return allLoaded;
+  }, []);
+
+  const processNextInQueue = useCallback(async () => {
+    if (isProcessing.current || audioQueue.current.length === 0) {
+      return;
+    }
+
+    isProcessing.current = true;
+    const currentItem = audioQueue.current[0];
+
+    try {
+      if (!audioCache.has(currentItem.cacheKey) ||
+        (audioCache.get(currentItem.cacheKey)?.error &&
+          (retryCount?.current?.get(currentItem.cacheKey) || 0) < MAX_RETRIES)) {
+
+        pendingAudios.current.add(currentItem.cacheKey);
+
+        const currentRetries = retryCount?.current?.get(currentItem.cacheKey) || 0;
+        retryCount?.current?.set(currentItem.cacheKey, currentRetries + 1);
+
+        // const audio: any = await getTTSAudioUrl(
+        //   currentItem.subtitle,
+        //   currentItem.voice,
+        //   currentItem.language
+        // );
+
+        const audio = {
+          url: currentItem.audioUrl,
+          duration: currentItem.duration,
+        }
+
+        if (audio?.url) {
+          // Preload audio sequentially
+          await preloadAudioRemotion(audio.url);
+
+          audioCache.set(currentItem.cacheKey, {
+            url: audio.url,
+            duration: audio.duration,
+            buffer: undefined,
+            loaded: true,
+            error: false
+          });
+
+          pendingAudios.current.delete(currentItem.cacheKey);
+          retryCount?.current?.delete(currentItem.cacheKey);
+        } else {
+
+        }
+      }
+    } catch (error) {
+      console.error('Error processing audio:', error, currentItem);
+
+      audioCache.set(currentItem.cacheKey, {
+        url: '',
+        duration: 0,
+        loaded: false,
+        error: true
+      });
+
+      // Only keep in pending if we haven't exceeded max retries
+      const currentRetries = retryCount?.current?.get(currentItem.cacheKey) || 0;
+      if (currentRetries >= MAX_RETRIES) {
+        pendingAudios.current.delete(currentItem.cacheKey);
+        retryCount?.current?.delete(currentItem.cacheKey);
+      }
+    } finally {
+      audioQueue.current = audioQueue.current.slice(1);
+      isProcessing.current = false;
+      checkAllAudiosLoaded();
+
+      if (audioQueue.current.length > 0) {
+        processNextInQueue();
+      }
+    }
+  }, [checkAllAudiosLoaded]);
 
   const memoizedProcessAudio = useMemo(() => {
-    const processAudioInner = async (subtitle: string, voice: string, language: string) => {
+    const processAudioInner = async (
+      subtitle: string,
+      voice: string,
+      language: string,
+      duration: number,
+      audioUrl?: string,
+    ): Promise<ProcessedAudio> => {
       if (!audioContext.current) {
         audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
 
       const cacheKey = `${simpleHash(subtitle)}_${voice}_${language}`;
 
+      // Return cached data if it exists and either loaded successfully or failed all retries
       if (audioCache.has(cacheKey)) {
-        const cachedData = audioCache.get(cacheKey);
-        return {
-          ttsDuration: cachedData.duration,
-          ttsDurationInFrames: Math.ceil((cachedData.duration + BUFFER_DURATION) * fps),
-          audioUrl: cachedData.url,
-          audioBuffer: cachedData.buffer
-        };
+        const cachedData = audioCache.get(cacheKey)!;
+        if (cachedData.loaded || (cachedData.error && (retryCount?.current?.get(cacheKey) || 0) >= MAX_RETRIES)) {
+          return {
+            ttsDuration: cachedData.duration + BUFFER_DURATION,
+            ttsDurationInFrames: Math.ceil((cachedData.duration + BUFFER_DURATION) * fps),
+            audioUrl: cachedData.url,
+            audioBuffer: cachedData.buffer
+          };
+        }
       }
 
-      try {
-        console.log({subtitle, voice, language})
-        const audio: any = await getTTSAudioUrl(subtitle, voice, language);
+      if (!audioQueue.current.find(item => item.cacheKey === cacheKey)) {
+        pendingAudios.current.add(cacheKey);
+        audioQueue.current.push({
+          cacheKey,
+          subtitle,
+          voice,
+          language,
+          duration,
+          audioUrl,
+        });
 
-        const audioData = {
-          url: audio?.url,
-          duration: audio.duration + BUFFER_DURATION
-        };
-
-        await preloadAudioRemotion(audio?.url);
-        audioCache.set(cacheKey, audioData);
-
-        return {
-          ttsDuration: audioData.duration,
-          ttsDurationInFrames: Math.ceil(audioData.duration * fps),
-          audioUrl: audioData.url
-        };
-      } catch (error) {
-        console.error('Error processing audio:', error);
-        throw error;
+        if (!isProcessing.current) {
+          processNextInQueue();
+        }
       }
+
+      // Wait until either loaded or max retries reached
+      while (!audioCache.has(cacheKey) ||
+      (!audioCache.get(cacheKey)!.loaded &&
+        (!audioCache.get(cacheKey)!.error ||
+          (retryCount?.current?.get(cacheKey) || 0) < MAX_RETRIES))) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      const processedAudio = audioCache.get(cacheKey)!;
+      return {
+        ttsDuration: processedAudio.duration + BUFFER_DURATION,
+        ttsDurationInFrames: Math.ceil((processedAudio.duration + BUFFER_DURATION) * fps),
+        audioUrl: processedAudio.url || '',
+        audioBuffer: processedAudio.buffer
+      };
     };
 
     return processAudioInner;
-  }, [fps]);
+  }, [fps, processNextInQueue]);
 
   return {
-    processAudio: useCallback(memoizedProcessAudio, [memoizedProcessAudio])
+    processAudio: useCallback(memoizedProcessAudio, [memoizedProcessAudio]),
+    isAllAudioLoaded
   };
 };
 
@@ -439,18 +571,39 @@ const VideoComposition: React.FC<{
   const [localLoading, setLocalLoading] = useState<boolean>(true);
   const { processAudio } = useOptimizedAudioProcessing(fps);
 
-  // Prepare media sources
-  const mediaSources = useMemo(() =>
-      data.frames.map(frame => ({ url: frame.url, type: frame.type })),
-    [data.frames]
-  );
+  // Stabilize data reference with useMemo to prevent unnecessary re-renders
+  const stabilizedData = useMemo(() => ({
+    ...data,
+    frames: data.frames,
+    videoConfig: data.videoConfig
+  }), [
+    data.videoId, // Only include properties that actually change the identity
+    // Using JSON.stringify as a simple way to deep compare the frames array
+    JSON.stringify(data.frames.map(f => ({ url: f.url, text: f.text, type: f.type, duration: f.duration }))),
+    JSON.stringify(data.videoConfig)
+  ]);
 
+  // Prepare media sources with stable references
+  const mediaSources = useMemo(() =>
+      stabilizedData.frames.map(frame => ({ url: frame.url, type: frame.type })),
+    [stabilizedData.frames]
+  );
 
   // Configure voice settings
   const voiceConfig = useMemo(() => ({
-    voice: data?.videoConfig?.voice ?? 'vi-VN-Neural2-A',
-    language: data?.videoConfig?.language ?? 'Vietnamese',
-  }), [data?.videoConfig?.voice]);
+    voice: stabilizedData.videoConfig?.voice ?? 'vi-VN-Neural2-A',
+    language: stabilizedData.videoConfig?.language ?? 'Vietnamese',
+  }), [stabilizedData.videoConfig?.language, stabilizedData.videoConfig?.voice]);
+
+  // Store information when the component mounts or stabilizedData changes
+  const dataRef = useRef(stabilizedData);
+  useEffect(() => {
+    // Only update the ref when there's a meaningful change
+    if (dataRef.current !== stabilizedData) {
+      console.log('Data reference changed, updating ref');
+      dataRef.current = stabilizedData;
+    }
+  }, [stabilizedData]);
 
   // Use the sequential loader
   const {
@@ -458,16 +611,13 @@ const VideoComposition: React.FC<{
     errors,
     processedFrames,
     loadingState,
-    version,
-    totalDuration: totalDurationVideo
+    version
   } = useSequentialLoader(
     mediaSources,
     processAudio,
-    data.frames,
+    stabilizedData.frames,
     voiceConfig,
-    data?.videoConfig?.musicUrl,
-    data?.videoConfig?.voiceUrl,
-    fps,
+    stabilizedData.videoConfig?.musicUrl
   );
 
   // Calculate frame durations once everything is loaded
@@ -486,24 +636,26 @@ const VideoComposition: React.FC<{
         duration,
         item: frame,
         audioUrl: frame.audioUrl,
-        audioDuration: frame.ttsDuration
+        audioDuration: frame.ttsDuration,
+        id: frame.id,
+        idx: frame.id,
       };
     });
   }, [isFullyLoaded, processedFrames, transitionDuration]);
 
-  // Notify parent when everything is ready
+  // Notify parent when everything is ready - with stable callback reference
+  const stableCallback = useRef(callback);
   useEffect(() => {
+    stableCallback.current = callback;
+  }, [callback]);
 
+  useEffect(() => {
     if (isFullyLoaded && frameDurations.length > 0) {
-      let totalDuration = frameDurations.reduce((sum, { duration }) => sum + duration, 0);
-
-      if(data?.videoConfig?.voiceUrl) {
-        // totalDuration = totalDurationVideo
-      }
+      const totalDuration = frameDurations.reduce((sum, { duration }) => sum + duration, 0);
       setLocalLoading(false);
-      callback?.(frameDurations, fps, totalDuration);
+      stableCallback.current?.(frameDurations, fps, totalDuration);
     }
-  }, [isFullyLoaded, frameDurations, fps, totalDurationVideo]);
+  }, [isFullyLoaded, frameDurations, fps]);
 
   // Show loading state with details
   if (localLoading || !isFullyLoaded) {

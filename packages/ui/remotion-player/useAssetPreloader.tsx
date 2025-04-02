@@ -11,132 +11,73 @@ interface LoadingState {
   audioProcessed: boolean;
   audioPreloaded: boolean;
   errors: string[];
-  totalDuration?: number;
 }
-
-// Helper function to get audio duration
-const getAudioDuration = async (url: string): Promise<number> => {
-  return new Promise((resolve, reject) => {
-    const audio = new Audio();
-    audio.src = url;
-
-    audio.addEventListener('loadedmetadata', () => {
-      resolve(audio.duration);
-    });
-
-    audio.addEventListener('error', () => {
-      reject(new Error('Failed to load audio file'));
-    });
-  });
-};
-
-/**
- * Estimates audio duration based on character count
- * Using the baseline of 84 characters ≈ 5 seconds
- *
- * @param text The input text to estimate duration for
- * @param wordsPerMinute Optional WPM rate (default calculated from baseline)
- * @returns Estimated duration in seconds
- */
-export const estimateAudioDuration = (text: string, wordsPerMinute?: number) => {
-  // Remove extra whitespace and normalize text
-  const normalizedText = text.trim().replace(/\s+/g, ' ');
-  const charCount = normalizedText.length;
-
-  // Using baseline: 84 chars ≈ 5 seconds
-  // So 1 char ≈ 0.0595 seconds
-  const CHARS_PER_SECOND = 84 / 3.5; // ≈ 16.8 chars per second
-
-  if (wordsPerMinute) {
-    // If WPM is provided, use that for calculation
-    const averageWordLength = 3.5; // Average English word length
-    const charsPerMinute = wordsPerMinute * averageWordLength;
-    const charsPerSecond = charsPerMinute / 60;
-    return charCount / charsPerSecond;
-  }
-
-  // Calculate duration using baseline ratio
-  const estimatedDuration = charCount / CHARS_PER_SECOND;
-
-  // Add a small buffer for very short texts (minimum 1 second)
-  return Math.max(1, estimatedDuration);
-};
-
-/**
- * Estimates audio duration with frame timings
- * Returns both duration and frame count
- */
-export const estimateAudioDurationWithFrames = (text: string, fps: number = 30) => {
-  const duration = estimateAudioDuration(text);
-  const frames = Math.ceil(duration * fps);
-
-  return {
-    duration,
-    frames,
-    durationInFrames: frames
-  };
-};
 
 export const useSequentialLoader = (
   mediaSources: Array<{ url: string; type: string }>,
-  audioProcessor: (text: string, voice: string, language: string) => Promise<any>,
+  audioProcessor: (text: string, voice: string, language: string, duration: number, audioUrl: string) => Promise<any>,
   frames: any[],
   voiceConfig: { voice: string; language: string },
-  musicUrl?: string,
-  voiceUrl?: string,
-  fps?: number,
+  musicUrl?: string
 ) => {
+  console.log(`useSequentialLoader called with ${frames.length} frames`);
+
   // Memoize input data to prevent unnecessary re-renders
   const memoizedSources = useMemo(() => mediaSources, [mediaSources]);
-  const memoizedFrames = useMemo(() => frames, [frames]);
-  const memoizedConfig = useMemo(() => voiceConfig, [voiceConfig.voice, voiceConfig.language]);
+  const memoizedConfig = useMemo(() => voiceConfig, [voiceConfig]);
 
+  // State to track loading process
   const [state, setState] = useState<LoadingState>({
     version: 0,
     mediaLoaded: false,
     audioProcessed: false,
     audioPreloaded: false,
-    errors: [],
-    totalDuration: 0
+    errors: []
   });
+
+  // Store the frames as raw data to help detect changes
+  const [currentFramesData, setCurrentFramesData] = useState<string>("");
+
+  // Force version increment on component mount
+  const [componentMounted, setComponentMounted] = useState(false);
+  useEffect(() => {
+    setComponentMounted(true);
+  }, []);
 
   // Refs for tracking state and preventing duplicate processing
   const processingRef = useRef(false);
-  const prevDataRef = useRef({
-    sources: null as any,
-    frames: null as any,
-    config: null as any,
-    music: null as any,
-    voice: null as any
-  });
   const versionRef = useRef<number>(0);
   const cancelPreloadRef = useRef<Array<() => void>>([]);
   const audioUrlsRef = useRef<string[]>([]);
   const processedFramesRef = useRef<any[]>([]);
   const prevSourcesRef = useRef<any>(null);
 
-  // Check if data actually changed
-  const hasDataChanged = useCallback(() => {
-    const currentData = {
-      sources: memoizedSources,
-      frames: memoizedFrames,
-      config: memoizedConfig,
-      music: musicUrl,
-      voice: voiceUrl
-    };
+  // CRITICAL FIX: Check for DEEP changes in frames array on EVERY render
+  useEffect(() => {
+    // Stringify the frames to compare content
+    const newFramesData = JSON.stringify(frames.map(frame => ({
+      url: frame.url,
+      text: frame.text,
+      type: frame.type,
+      duration: frame.duration
+    })));
 
-    if (isEqual(prevDataRef.current, currentData)) {
-      return false;
+    // If the content has changed, update our state
+    if (newFramesData !== currentFramesData) {
+      console.log("Frame content changed! Updating processed frames...");
+      setCurrentFramesData(newFramesData);
     }
-
-    prevDataRef.current = currentData;
-    return true;
-  }, [memoizedSources, memoizedFrames, memoizedConfig, musicUrl, voiceUrl]);
+  });
 
   // Step 1: Load media (images/videos)
   const loadMedia = useCallback(async (version: number) => {
     if (!isEqual(prevSourcesRef.current, memoizedSources)) {
       prevSourcesRef.current = [...memoizedSources];
+
+      // Clear media cache for changed URLs to force reload
+      mediaSources.forEach(source => {
+        mediaCache.delete(source.url);
+      });
 
       // Cancel any ongoing preloads
       cancelPreloadRef.current.forEach(cancel => cancel());
@@ -193,81 +134,88 @@ export const useSequentialLoader = (
         mediaLoaded: true
       }));
     }
-  }, [memoizedSources]);
+  }, [memoizedSources, mediaSources]);
 
   // Step 2: Process audio files
-  // Step 2: Process audio files or handle voiceUrl
   const processAudio = useCallback(async (version: number) => {
-    if (processingRef.current) return;
+    // Don't return early if we've reset the processing flag
+    // We need to make sure this runs even if another process was previously running
     processingRef.current = true;
 
     try {
-      let totalDuration = 0;
+      // ALWAYS use the current frames, not stale ones
+      const currentFrames = frames;
 
-      // Process frames sequentially if no voiceUrl
+      // Clear any existing processed frames
       const processedFrames = [];
-      for (const frame of memoizedFrames) {
+      console.log(`Processing ${currentFrames.length} frames for version ${version}`);
 
-        if (version !== versionRef.current) break;
+      // Process frames sequentially instead of parallel
+      // @ts-ignore
+      for (const [index, frame] of (currentFrames?.entries?.() ?? [])) {
+        // Check version before processing each frame
+        if (version !== versionRef.current) {
+          console.log(`Version changed during processing. Aborting.`);
+          break;
+        }
+
+        console.log(`Processing frame ${index}:`, {
+          text: frame.text,
+          url: frame.url,
+          version
+        });
 
         try {
-          let result: any = {
-            audioUrl: '',
-            ttsDuration: 0,
-            ttsDurationInFrames: 0,
-          };
+          // Always process the frame regardless of whether audioUrl exists
+          const result = await audioProcessor(
+            frame.text,
+            memoizedConfig.voice,
+            memoizedConfig.language,
+            frame.duration || 5, // Default duration if not provided
+            frame.audioUrl ?? '',
+          );
 
-          if(!voiceUrl) {
-            result = await audioProcessor(
-              frame.text,
-              memoizedConfig.voice,
-              memoizedConfig.language
-            )
-          } else {
-            const a = estimateAudioDurationWithFrames(frame.text, fps)
-            result = {
-              audioUrl: '',
-              ttsDuration: a.duration,
-              ttsDurationInFrames: a.durationInFrames,
-            }
-          }
+          // If version has changed during processing, don't add this frame
+          if (version !== versionRef.current) continue;
 
-          totalDuration += result.ttsDuration;
-          processedFrames.push({
-            ...frame,
+          // Create a processed frame with ALL properties from the current frame
+          const processedFrame = {
+            ...frame,  // Include ALL properties from the original frame
             audioUrl: result.audioUrl,
             ttsDuration: result.ttsDuration,
-            ttsDurationInFrames: result.ttsDurationInFrames
+            ttsDurationInFrames: result.ttsDurationInFrames,
+            idx: index,
+            id: index,
+          };
+
+          // Force the URL and text to match the current frame exactly
+          processedFrame.url = frame.url;
+          processedFrame.text = frame.text;
+
+          processedFrames.push(processedFrame);
+
+          console.log(`Processed frame ${index} complete:`, {
+            text: processedFrames[processedFrames.length-1].text,
+            url: processedFrames[processedFrames.length-1].url
           });
         } catch (error) {
           console.error(`Error processing frame: ${frame.text}`, error);
           continue;
         }
       }
-      processedFramesRef.current = processedFrames;
-
-      // Add music duration if exists
-      if (voiceUrl && version === versionRef.current) {
-        try {
-          const musicDuration = await getAudioDuration(voiceUrl);
-          totalDuration = Math.max(totalDuration, musicDuration);
-        } catch (error) {
-          console.warn('Failed to get music duration', error);
-        }
-      }
 
       // Only update state if version hasn't changed
       if (version === versionRef.current) {
+        console.log(`Setting ${processedFrames.length} processed frames`);
+        processedFramesRef.current = processedFrames;
         audioUrlsRef.current = [
-          ...processedFramesRef.current.map(f => f?.audioUrl).filter(Boolean),
-          musicUrl,
-          voiceUrl,
+          ...processedFrames.map(f => f?.audioUrl).filter(Boolean),
+          musicUrl
         ].filter(Boolean);
 
         setState(prev => ({
           ...prev,
-          audioProcessed: true,
-          totalDuration
+          audioProcessed: true
         }));
       }
     } catch (error) {
@@ -280,17 +228,7 @@ export const useSequentialLoader = (
     } finally {
       processingRef.current = false;
     }
-  }, [memoizedFrames, audioProcessor, memoizedConfig, musicUrl, voiceUrl]);
-
-  const isIOS = () => {
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    return /iphone|ipad|ipod/.test(userAgent);
-  };
-
-  const isSafari = () => {
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    return userAgent.includes('safari') && !userAgent.includes('chrome');
-  };
+  }, [frames, memoizedConfig, audioProcessor, musicUrl]);
 
   // Step 3: Preload audio files
   const preloadAudioFiles = useCallback(async (version: number) => {
@@ -299,13 +237,6 @@ export const useSequentialLoader = (
         audioUrlsRef.current.map(async (url) => {
           if (version !== versionRef.current) return;
           await preloadAudio(url);
-          // try {
-          //   if(!(isIOS() || isSafari())) {
-          //
-          //   }
-          // } catch {
-          //
-          // }
         })
       );
 
@@ -325,35 +256,49 @@ export const useSequentialLoader = (
     }
   }, []);
 
-  // Main effect to coordinate sequential loading
+  // Main effect to coordinate sequential loading - react to currentFramesData
   useEffect(() => {
-    if (!hasDataChanged() || processingRef.current) {
-      return;
+    // If this is the first render, skip immediate processing
+    if (!componentMounted) return;
+
+    // Cancel any ongoing processing
+    if (processingRef.current) {
+      processingRef.current = false;
     }
 
-    const version = ++versionRef.current;
-    setState(prev => ({
-      ...prev,
-      version,
+    // CRITICAL FIX: Reset the state immediately when frames change
+    // This ensures isFullyLoaded becomes false while new frames are being processed
+    setState({
+      version: 0,
       mediaLoaded: false,
       audioProcessed: false,
       audioPreloaded: false,
       errors: []
-    }));
+    });
 
-    const loadSequentially = async () => {
-      // Step 3: Preload audio
-      await preloadAudioFiles(version);
-      // Step 2: Load media
-      await loadMedia(version);
-      if (version !== versionRef.current) return;
-      // Step 1: Process audio first (potentially slowest operation)
-      await processAudio(version);
-      if (version !== versionRef.current) return;
+    // Clear processed frames to avoid using stale data
+    processedFramesRef.current = [];
 
-    };
+    // Increment version to cancel any ongoing operations
+    const version = ++versionRef.current;
 
-    loadSequentially();
+    // Delay starting new processing to ensure reset takes effect
+    setTimeout(() => {
+      const loadSequentially = async () => {
+        // Step 1: Process audio first (potentially slowest operation)
+        await processAudio(version);
+        if (version !== versionRef.current) return;
+
+        // Step 2: Load media
+        await loadMedia(version);
+        if (version !== versionRef.current) return;
+
+        // Step 3: Preload audio
+        await preloadAudioFiles(version);
+      };
+
+      loadSequentially();
+    }, 0);
 
     return () => {
       // Cleanup function
@@ -361,22 +306,27 @@ export const useSequentialLoader = (
       processingRef.current = false;
     };
   }, [
-    memoizedSources,
-    memoizedFrames,
-    memoizedConfig,
-    musicUrl,
-    hasDataChanged,
+    currentFramesData, // This is the key dependency - it changes when frames content changes
+    componentMounted,
     processAudio,
     loadMedia,
     preloadAudioFiles
   ]);
+
+  // Add debug logging for processedFrames changes
+  useEffect(() => {
+    console.log(`Current processedFrames count: ${processedFramesRef.current.length}`);
+    if (processedFramesRef.current.length > 0) {
+      console.log(`First frame text: ${processedFramesRef.current[0].text}`);
+      console.log(`First frame URL: ${processedFramesRef.current[0].url}`);
+    }
+  }, [state.audioProcessed]);
 
   return {
     isFullyLoaded: state.mediaLoaded && state.audioProcessed && state.audioPreloaded,
     errors: state.errors,
     version: state.version,
     processedFrames: processedFramesRef.current,
-    totalDuration: state.totalDuration,
     loadingState: {
       mediaLoaded: state.mediaLoaded,
       audioProcessed: state.audioProcessed,
