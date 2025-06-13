@@ -1,0 +1,73 @@
+# =========================================
+# Lịch sử và cấu hình Git
+# =========================================
+.git
+.gitattributes
+.gitignore
+.github
+
+# =========================================
+# Dependencies (sẽ được cài đặt bên trong container)
+# =========================================
+node_modules
+*/node_modules
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# =========================================
+# Build output (sẽ được tạo bên trong container)
+# =========================================
+build
+dist
+.next
+out
+
+# =========================================
+# Các file môi trường local (Không bao giờ đưa vào image)
+# =========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Dòng !.env.example cho phép giữ lại file ví dụ
+!.env.example
+
+# =========================================
+# Các file log
+# =========================================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# =========================================
+# Cấu hình của các trình soạn thảo mã (IDE)
+# =========================================
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# =========================================
+# Các file hệ điều hành
+# =========================================
+.DS_Store
+Thumbs.db
+
+# =========================================
+# Các file test và coverage
+# =========================================
+coverage
+.nyc_output
+
+# =========================================
+# Các file tạm và file rác khác
+# =========================================
+*.tmp
+*.bak
+*.swp
