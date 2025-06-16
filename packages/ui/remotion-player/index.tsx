@@ -548,7 +548,7 @@ const LoadingOverlay: React.FC = ({children}: {children: ReactNode}) => (
           width: '50px',
           height: '50px',
           border: '3px solid #fff',
-          borderTop: '3px solid #3498db',
+          borderTop: '3px solid var(--colorPrimary)',
           borderRadius: '50%',
           margin: '0 auto 20px',
           animation: 'spin 1s linear infinite',

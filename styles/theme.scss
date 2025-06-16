@@ -165,5 +165,27 @@ body[client_theme="aueu"] {
   --colorPurple08: #63150d;
   --colorPurple09: #440c09;
   --colorPurple10: #250405;
+
+  --colorGreen10: #276431;
+  --colorGreen09: #2d6e38;
+  --colorGreen08: #33783f;
+  --colorGreen07: #389046;
+  --colorGreen06: #389063;
+  --colorGreen05: #5baa7d;
+  --colorGreen04: #7ec497;
+  --colorGreen03: #a1deb1;
+  --colorGreen02: #97ffc9;
+  --colorGreen01: #e6fff0;
+
+  --colorInfoForeDisabled: var(--colorBlackA40);
+  --colorInfoForeLow: var(--colorBlack);
+  --colorInfoFore: var(--colorWhite);
+  --colorInfoLow: var(--colorGreen02);
+  --colorInfoDisabled: var(--colorBlackA07);
+  --colorInfoActive: var(--colorGreen07);
+  --colorInfoHover: var(--colorGreen05);
+  --colorInfo: var(--colorGreen06);
+
+  --colorPositive: var(--colorGreen06);
 }
 
