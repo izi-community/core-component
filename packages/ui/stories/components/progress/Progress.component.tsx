@@ -3,7 +3,8 @@ import {css} from '@emotion/react'
 import styles from './progress.styles.module.css';
 
 import {CloseIcon} from "../closeIcon";
-import {ReactNode} from "react";
+import {ReactNode, useMemo} from "react";
+import { useSearchParams } from 'react-router-dom';
 
 interface IProgressProps {
   activeStoryIndex: number;
@@ -15,6 +16,10 @@ interface IProgressProps {
 export function Progress(props: IProgressProps) {
   const {stories, orientation, classNames, currentIndex, setIsClickPaused} = useStoriesContext();
   const isVideo = stories?.[currentIndex]?.type === 'video' || orientation === 'vertical'
+  const [searchParams] = useSearchParams();
+
+  const isAueuCourse = useMemo(() => searchParams?.get?.('client_id') === 'AUEU_COURSE', [searchParams])
+  const isAueuSurvey = useMemo(() => searchParams?.get?.('client_id') === 'AUEU_SURVEY', [searchParams])
 
   return (
     <div
@@ -51,7 +56,10 @@ export function Progress(props: IProgressProps) {
             css={css`
                 width: ${(props.activeStoryIndex * 100) / (stories.length)}%;
             `}
-            className="h-4 z-10 bg-[var(--colorPositive)] transition-all ease-in-out absolute left-0 top-0"
+            className={`
+              h-4 z-10 transition-all ease-in-out absolute left-0 top-0
+              ${isAueuCourse || isAueuSurvey ? 'bg-[var(--colorPrimary)]' : 'bg-[var(--colorPositive)]'}
+            `}
           />
         </div>
       </div>
