@@ -14,11 +14,14 @@ html.is-safari body {
     font-size: inherit!important;
     letter-spacing: inherit!important;
     line-height: inherit!important;
-    text-align: left!important;
+    // text-align: left!important;
     font-family: inherit!important;
-    ol {
+    ol,ul {
       list-style-position: inside!important;
-      list-style-type: disc!important;
+      list-style-type: revert!important;
+    }
+    a {
+      text-decoration: underline!important;
     }
   }
 }
